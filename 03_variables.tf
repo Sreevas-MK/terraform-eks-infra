@@ -29,6 +29,26 @@ variable "route53_hosted_zone_arn" {
 }
 
 
+variable "eks_node_instance_type" {
+  description = "Instance type for eks node"
+  type        = string
+  default     = "t3.medium"
+}
+
+
+variable "eks_node_ami_type" {
+  description = "AMI type for eks node"
+  type        = string
+  default     = "AL2023_x86_64_STANDARD"
+}
+
+variable "eks_node_disk_size" {
+  description = "Disk size (in GB) for EKS worker nodes"
+  type        = number
+  default     = 20
+}
+
+
 variable "my_ip_cidr" {
   default = "200.69.21.162/32"
 }
