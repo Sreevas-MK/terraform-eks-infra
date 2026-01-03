@@ -33,7 +33,6 @@ module "eks" {
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.private_subnets
 
-  # EKS Managed Node Group(s)
   eks_managed_node_groups = {
     default = {
       ami_type       = var.eks_node_ami_type
@@ -41,7 +40,12 @@ module "eks" {
 
       key_name          = aws_key_pair.ssh_auth_key.id
       disk_size         = var.eks_node_disk_size
-      max_pods_per_node = 58
+
+      metadata_options = {
+        http_endpoint               = "enabled"
+        http_tokens                 = "required"
+        http_put_response_hop_limit = 2
+      }
 
       min_size     = 1
       max_size     = 2
@@ -84,7 +88,7 @@ module "lb_controller_irsa" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:load-balancer-controller"]
+      namespace_service_accounts = ["kube-system:aws-load-balancer-controller-sa"]
     }
   }
 
@@ -140,10 +144,24 @@ module "eks_blueprints_addons" {
 
   enable_aws_load_balancer_controller = true
   aws_load_balancer_controller = {
-    set = [{
-      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-      value = module.lb_controller_irsa.iam_role_arn
-    }]
+    set = [
+      {
+        name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+        value = module.lb_controller_irsa.iam_role_arn
+      },
+      {
+        name  = "serviceAccount.name"
+        value = "aws-load-balancer-controller-sa"
+      },
+#       {
+#         name  = "serviceAccount.create"
+#         value = "true"
+#       },
+      {
+        name  = "vpcId"
+        value = module.vpc.vpc_id
+      }
+    ]
   }
 
   enable_metrics_server = true
