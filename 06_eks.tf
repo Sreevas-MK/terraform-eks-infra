@@ -8,6 +8,18 @@ module "eks" {
   create_cloudwatch_log_group = false
   # Set true if log group already exists
 
+  addons = {
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    vpc-cni = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+  }
+
   endpoint_public_access                   = true
   enable_cluster_creator_admin_permissions = true
 
