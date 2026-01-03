@@ -12,9 +12,17 @@ module "vpc" {
   enable_nat_gateway = true
   single_nat_gateway = true
 
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = 1
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = 1
+  }
+
   tags = {
-    Terraform   = "true"
-    Environment = var.project_environment
+    Terraform                                           = "true"
+    Environment                                         = var.project_environment
+    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"
   }
 }
-

@@ -14,6 +14,12 @@ module "eks" {
     }
     vpc-cni = {
       most_recent = true
+      configuration_values = jsonencode({
+        env = {
+          ENABLE_PREFIX_DELEGATION = "true"
+          WARM_PREFIX_TARGET       = "1"
+        }
+      })
     }
     kube-proxy = {
       most_recent = true
@@ -27,16 +33,15 @@ module "eks" {
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.private_subnets
 
-
   # EKS Managed Node Group(s)
   eks_managed_node_groups = {
     default = {
       ami_type       = var.eks_node_ami_type
       instance_types = [var.eks_node_instance_type]
 
-      key_name  = aws_key_pair.ssh_auth_key.id
-      disk_size = var.eks_node_disk_size
-
+      key_name          = aws_key_pair.ssh_auth_key.id
+      disk_size         = var.eks_node_disk_size
+      max_pods_per_node = 58
 
       min_size     = 1
       max_size     = 2
@@ -50,7 +55,6 @@ module "eks" {
   }
 }
 
-
 module "ebs_csi_driver_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.20"
@@ -60,7 +64,6 @@ module "ebs_csi_driver_irsa" {
 
   oidc_providers = {
     main = {
-      # Updated reference to match your 'module "eks"'
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
     }
@@ -70,6 +73,46 @@ module "ebs_csi_driver_irsa" {
     Environment = var.project_environment
   }
 }
+
+module "lb_controller_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.20"
+
+  role_name_prefix                       = "load-balancer-controller-"
+  attach_load_balancer_controller_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:load-balancer-controller"]
+    }
+  }
+
+  tags = {
+    Environment = var.project_environment
+  }
+}
+
+module "external_dns_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.20"
+
+  role_name_prefix              = "external-dns-"
+  attach_external_dns_policy    = true
+  external_dns_hosted_zone_arns = [var.route53_hosted_zone_arn]
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["external-dns:external-dns"]
+    }
+  }
+
+  tags = {
+    Environment = var.project_environment
+  }
+}
+
 
 module "eks_blueprints_addons" {
   source  = "aws-ia/eks-blueprints-addons/aws"
@@ -84,29 +127,39 @@ module "eks_blueprints_addons" {
       most_recent = true
     }
     aws-ebs-csi-driver = {
-      most_recent              = true
-      service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
+      most_recent                 = true
+      service_account_role_arn    = module.ebs_csi_driver_irsa.iam_role_arn
       resolve_conflicts_on_create = "OVERWRITE"
     }
   }
-
 
   cluster_name      = module.eks.cluster_name
   cluster_endpoint  = module.eks.cluster_endpoint
   cluster_version   = module.eks.cluster_version
   oidc_provider_arn = module.eks.oidc_provider_arn
 
-  enable_aws_load_balancer_controller   = false
-  enable_metrics_server                 = true
-  enable_external_dns                   = true
-  enable_cert_manager                   = false
-  cert_manager_route53_hosted_zone_arns = [var.route53_hosted_zone_arn]
+  enable_aws_load_balancer_controller = true
+  aws_load_balancer_controller = {
+    set = [{
+      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+      value = module.lb_controller_irsa.iam_role_arn
+    }]
+  }
+
+  enable_metrics_server = true
+
+  enable_external_dns = true
+  external_dns = {
+    set = [{
+      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+      value = module.external_dns_irsa.iam_role_arn
+    }]
+  }
 
   tags = {
     Environment = var.project_environment
   }
 }
-
 
 resource "aws_security_group_rule" "bastion_to_api" {
   description              = "Bastion to EKS API"
@@ -127,4 +180,3 @@ resource "aws_security_group_rule" "bastion_to_node_ssh" {
   security_group_id        = module.eks.node_security_group_id
   source_security_group_id = aws_security_group.bastion.id
 }
-
