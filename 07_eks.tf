@@ -49,3 +49,82 @@ module "eks" {
     Terraform   = "true"
   }
 }
+
+
+module "ebs_csi_driver_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.20"
+
+  role_name_prefix      = "ebs-csi-driver-"
+  attach_ebs_csi_policy = true
+
+  oidc_providers = {
+    main = {
+      # Updated reference to match your 'module "eks"'
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+
+  tags = {
+    Environment = var.project_environment
+  }
+}
+
+module "eks_blueprints_addons" {
+  source  = "aws-ia/eks-blueprints-addons/aws"
+  version = "~> 1.23.0"
+
+  depends_on = [
+    module.eks.eks_managed_node_groups
+  ]
+
+  eks_addons = {
+    coredns = {
+      most_recent = true
+    }
+    aws-ebs-csi-driver = {
+      most_recent              = true
+      service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
+      resolve_conflicts_on_create = "OVERWRITE"
+    }
+  }
+
+
+  cluster_name      = module.eks.cluster_name
+  cluster_endpoint  = module.eks.cluster_endpoint
+  cluster_version   = module.eks.cluster_version
+  oidc_provider_arn = module.eks.oidc_provider_arn
+
+  enable_aws_load_balancer_controller   = false
+  enable_metrics_server                 = true
+  enable_external_dns                   = true
+  enable_cert_manager                   = false
+  cert_manager_route53_hosted_zone_arns = [var.route53_hosted_zone_arn]
+
+  tags = {
+    Environment = var.project_environment
+  }
+}
+
+
+resource "aws_security_group_rule" "bastion_to_api" {
+  description              = "Bastion to EKS API"
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = module.eks.cluster_security_group_id
+  source_security_group_id = aws_security_group.bastion.id
+}
+
+resource "aws_security_group_rule" "bastion_to_node_ssh" {
+  description              = "Bastion SSH to worker nodes"
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = module.eks.node_security_group_id
+  source_security_group_id = aws_security_group.bastion.id
+}
+
