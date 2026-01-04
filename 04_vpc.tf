@@ -5,9 +5,13 @@ module "vpc" {
   name = var.project_name
   cidr = var.vpc_cidr_block
 
-  azs             = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
-  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  private_subnets = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
+  azs                             = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+  public_subnets                  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  private_subnets                 = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
+  create_database_subnet_group    = true
+  database_subnets                = ["10.0.21.0/24", "10.0.22.0/24", "10.0.23.0/24"]
+  create_elasticache_subnet_group = true
+  elasticache_subnets             = ["10.0.31.0/24", "10.0.32.0/24", "10.0.33.0/24"]
 
   enable_nat_gateway = true
   single_nat_gateway = true

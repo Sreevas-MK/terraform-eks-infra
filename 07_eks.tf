@@ -13,7 +13,8 @@ module "eks" {
       before_compute = true
     }
     vpc-cni = {
-      most_recent = true
+      most_recent    = true
+      before_compute = true
       configuration_values = jsonencode({
         env = {
           ENABLE_PREFIX_DELEGATION = "true"
@@ -35,11 +36,14 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
+      labels = {
+        "node-role.kubernetes.io/worker" = "true"
+      }
       ami_type       = var.eks_node_ami_type
       instance_types = [var.eks_node_instance_type]
 
-      key_name          = aws_key_pair.ssh_auth_key.id
-      disk_size         = var.eks_node_disk_size
+      key_name  = aws_key_pair.ssh_auth_key.id
+      disk_size = var.eks_node_disk_size
 
       metadata_options = {
         http_endpoint               = "enabled"
@@ -153,10 +157,6 @@ module "eks_blueprints_addons" {
         name  = "serviceAccount.name"
         value = "aws-load-balancer-controller-sa"
       },
-#       {
-#         name  = "serviceAccount.create"
-#         value = "true"
-#       },
       {
         name  = "vpcId"
         value = module.vpc.vpc_id
@@ -177,6 +177,24 @@ module "eks_blueprints_addons" {
   tags = {
     Environment = var.project_environment
   }
+}
+
+resource "kubernetes_storage_class_v1" "ebs_sc" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+  storage_provisioner    = "ebs.csi.aws.com"
+  volume_binding_mode    = "WaitForFirstConsumer"
+  reclaim_policy         = "Delete"
+  allow_volume_expansion = true
+  parameters = {
+    type = "gp3"
+  }
+
+  depends_on = [module.eks_blueprints_addons]
 }
 
 resource "aws_security_group_rule" "bastion_to_api" {
