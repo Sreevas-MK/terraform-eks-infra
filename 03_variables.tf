@@ -48,6 +48,53 @@ variable "eks_node_disk_size" {
   default     = 20
 }
 
+variable "app_repo_url" {
+  description = "Application repo url"
+  type        = string
+  default     = "https://github.com/Sreevas-MK/employees-data-app-rds-eca-eks.git"
+}
+
+variable "app_repo_path" {
+  description = "Application repo path"
+  type        = string
+  default     = "."
+}
+
+variable "app_namespace" {
+  description = "Application namespace"
+  type        = string
+  default     = "flask-mysql-redis-app"
+}
+
+variable "app_name" {
+  description = "Application name"
+  type        = string
+  default     = "flask-mysql-redis-app"
+}
+
+variable "app_host" {
+  description = "Application hostname"
+  type        = string
+  default     = "app.sreevasmk.in"
+}
+
+variable "certificate_arn" {
+  description = "certificate arn at ACM"
+  type        = string
+  default     = "arn:aws:acm:ap-south-1:337909748081:certificate/e2f7cebe-713c-49cc-9cf4-79683a52256e"
+}
+
+variable "alb_group_name" {
+  description = "ALB group name"
+  type        = string
+  default     = "eks-alb"
+}
+
+variable "argocd_url" {
+  description = "The external URL for ArgoCD"
+  type        = string
+  default     = "https://argocd.sreevasmk.in"
+}
 
 variable "my_ip_cidr" {
   default = "200.69.21.162/32"

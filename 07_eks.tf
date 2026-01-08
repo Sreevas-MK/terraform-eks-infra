@@ -2,18 +2,17 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
 
-  name                        = "${var.project_name}-cluster"
-  kubernetes_version          = "1.31"
-  enable_irsa                 = true
-  create_cloudwatch_log_group = false
-  # Set true if log group already exists
+  name               = "${var.project_name}-cluster"
+  kubernetes_version = "1.33"
+  enable_irsa        = true
 
   addons = {
+    coredns = {}
     eks-pod-identity-agent = {
       before_compute = true
     }
+    kube-proxy = {}
     vpc-cni = {
-      most_recent    = true
       before_compute = true
       configuration_values = jsonencode({
         env = {
@@ -22,27 +21,27 @@ module "eks" {
         }
       })
     }
-    kube-proxy = {
-      most_recent = true
-    }
   }
 
-  endpoint_public_access                   = true
+  # Optional
+  endpoint_public_access  = true
+  endpoint_private_access = true
+
+  # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
 
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.private_subnets
 
+  # EKS Managed Node Group(s)
   eks_managed_node_groups = {
-    default = {
-      labels = {
-        "node-role.kubernetes.io/worker" = "true"
-      }
+    example = {
+      # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type       = var.eks_node_ami_type
       instance_types = [var.eks_node_instance_type]
 
-      key_name  = aws_key_pair.ssh_auth_key.id
+      key_name  = aws_key_pair.ssh_auth_key.key_name
       disk_size = var.eks_node_disk_size
 
       metadata_options = {
@@ -51,9 +50,9 @@ module "eks" {
         http_put_response_hop_limit = 2
       }
 
-      min_size     = 1
-      max_size     = 2
-      desired_size = 1
+      min_size     = 2
+      max_size     = 3
+      desired_size = 3
     }
   }
 
@@ -131,9 +130,6 @@ module "eks_blueprints_addons" {
   ]
 
   eks_addons = {
-    coredns = {
-      most_recent = true
-    }
     aws-ebs-csi-driver = {
       most_recent                 = true
       service_account_role_arn    = module.ebs_csi_driver_irsa.iam_role_arn
@@ -168,10 +164,16 @@ module "eks_blueprints_addons" {
 
   enable_external_dns = true
   external_dns = {
-    set = [{
-      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-      value = module.external_dns_irsa.iam_role_arn
-    }]
+    set = [
+      {
+        name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+        value = module.external_dns_irsa.iam_role_arn
+      },
+      {
+        name  = "serviceAccount.name"
+        value = "external-dns"
+      }
+    ]
   }
 
   tags = {

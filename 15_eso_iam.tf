@@ -5,6 +5,8 @@ module "external_secrets_irsa" {
 
   role_name = "${var.project_name}-external-secrets-irsa"
 
+  depends_on = [module.eks]
+
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn

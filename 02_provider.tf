@@ -14,9 +14,17 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "~> 3.0"
     }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.14.0"
+    }
     helm = {
       source  = "hashicorp/helm"
       version = "~> 2.8"
+    }
+    argocd = {
+      source  = "oboukili/argocd"
+      version = "~> 6.0" # Use the latest stable version
     }
   }
 }
@@ -44,3 +52,31 @@ provider "helm" {
     }
   }
 }
+
+provider "kubectl" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  load_config_file       = false
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+  }
+}
+
+provider "argocd" {
+  core = true
+  # This tells the provider to use your KUBECONFIG instead of a URL
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    }
+  }
+}
+

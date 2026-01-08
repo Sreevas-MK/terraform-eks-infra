@@ -135,7 +135,7 @@ grafana:
     tag: latest
 
 prometheus:
-  enabled: false
+  enabled: true
   isDefault: true
   server:
     service:
@@ -201,9 +201,9 @@ prometheus-node-exporter:
     type: ClusterIP
     port: 9100
   tolerations:
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Exists"
-      effect: "NoSchedule"
+#     - key: "node-role.kubernetes.io/control-plane"
+#       operator: "Exists"
+#       effect: "NoSchedule"
       # optional: effect: "NoSchedule" for full control-plane nodes
     - key: "node.kubernetes.io/not-ready"
       operator: "Exists"
@@ -211,8 +211,8 @@ prometheus-node-exporter:
     - key: "node.kubernetes.io/unreachable"
       operator: "Exists"
       effect: "NoExecute"
-  nodeSelector:
-    node-role.kubernetes.io/worker: "true"
+#   nodeSelector:
+#     node-role.kubernetes.io/worker: "true"
 
 filebeat:
   enabled: false

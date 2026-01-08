@@ -19,6 +19,12 @@ resource "aws_instance" "bastion" {
   user_data                   = file("./files/bastion_setup.sh")
   iam_instance_profile        = aws_iam_instance_profile.bastion_profile.name
 
+  root_block_device {
+    volume_size = 5
+    volume_type = "gp3"
+    encrypted   = true
+  }
+
   tags = {
     Name        = "${var.project_name}-bastion"
     Environment = var.project_environment

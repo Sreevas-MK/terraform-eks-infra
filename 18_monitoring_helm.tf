@@ -2,6 +2,10 @@ resource "kubernetes_namespace_v1" "monitoring" {
   metadata {
     name = "monitoring"
   }
+  depends_on = [
+    module.eks_blueprints_addons,
+    module.eks.eks_managed_node_groups
+  ]
 }
 
 resource "helm_release" "monitoring_stack" {
@@ -27,17 +31,16 @@ resource "helm_release" "monitoring_stack" {
     kubernetes_namespace_v1.monitoring,
     aws_s3_bucket.loki_logs,
     module.loki_irsa,
+    module.eks_blueprints_addons,
     module.eks.eks_managed_node_groups
   ]
 }
 
-resource "kubernetes_manifest" "grafana_datasources" {
-  manifest = yamldecode(
-    file("${path.module}/files/monitoring-configmap.yml")
-  )
-
+resource "kubectl_manifest" "grafana_datasources" {
   depends_on = [
     helm_release.monitoring_stack,
-    module.eks.eks_managed_node_groups
+    module.eks_blueprints_addons
   ]
+
+  yaml_body = file("${path.module}/files/monitoring-configmap.yml")
 }
