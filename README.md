@@ -1,12 +1,26 @@
 # Enterprise EKS Platform
 
-This repository contains a full-stack Infrastructure-as-Code (IaC) deployment for an Amazon EKS environment. It includes a complete data layer, GitOps with ArgoCD, and a full observability stack.
+This repository contains a full-stack Infrastructure-as-Code (IaC) deployment for an Amazon EKS environment featuring an automated PLG Stack (Prometheus, Loki, Grafana) for observability, RDS MySQL for persistent data, and ElastiCache (Valkey) for high-speed caching—all orchestrated via ArgoCD GitOps.
 
 ---
 
 ##  Project Phases
 
 To deploy this infrastructure safely, you can follow the sequence below:
+
+| Phase | Component | Key Technology | Purpose |
+| --- | --- | --- | --- |
+| [Phase 1](https://www.google.com/search?q=%23phase-1-remote-state-bootstrap) | **Bootstrap** | S3 & DynamoDB | Securely store and lock Terraform state files. |
+| [Phase 2](https://www.google.com/search?q=%23phase-2-backend-providers--variables) | **Foundation** | Terraform Providers | Configure AWS, Kubernetes, and Helm authentication. |
+| [Phase 3](https://www.google.com/search?q=%23phase-3-networking) | **Networking** | VPC & Subnets | Establish a 4-tier isolated network (Public/Private/DB/Cache). |
+| [Phase 4](https://www.google.com/search?q=%23phase-4-eks-cluster--iam-integration) | **Compute** | Amazon EKS 1.33 | Provision the control plane and managed node groups. |
+| [Phase 5](https://www.google.com/search?q=%23phase-5-secure-access--bastion-management) | **Access** | Bastion Host | Secure SSH entry-point into the private network nodes. |
+| [Phase 6](https://www.google.com/search?q=%23phase-6-data-layer-rds--elasticache) | **Storage** | RDS & Valkey | Deploy managed database and distributed caching layers. |
+| [Phase 7](https://www.google.com/search?q=%23phase-7-external-secrets-operator-eso--iam-security) | **Security** | ESO & Secrets Mgr | Automate secure credential injection into K8s pods. |
+| [Phase 8](https://www.google.com/search?q=%23phase-8-full-stack-observability-loki-prometheus--grafana) | **Observability** | PLG Stack | Centralized logging (S3) and metric dashboards. |
+| [Phase 9](https://www.google.com/search?q=%23phase-9-argocd--automated-gitops) | **Continuous Delivery** | ArgoCD | Sync GitHub repositories directly to the cluster. |
+
+---
 
 ### Phase 1: Remote State Bootstrap
 Before the main infrastructure can be managed, we must create a secure place to store the Terraform State. 
