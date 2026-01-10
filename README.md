@@ -27,7 +27,7 @@ terraform apply
 
 Once bootstrap is complete, move to the root directory to deploy the full stack.
 
-1. **Configure Variables:** Edit `03_variables.tf` to match your environment settings (e.g., `my_ip_cidr`, `project_name`).
+1. **Configure Variables:** Edit `03_variables.tf` to match your environment settings (e.g., `aws_region`, `project_name`).
 2. **Initialize:**
 ```bash
 terraform init
