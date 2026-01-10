@@ -5,7 +5,7 @@ This directory contains the "Foundation Code." Its sole purpose is to provision 
 ##  Bootstrap Architecture
 
 <p align="center">
-  <img src="./images/00_eks_bootstrap.png" alt="Bootstrap Architecture" width="300">
+  <img src="./images/00_eks_bootstrap.png" alt="Bootstrap Architecture" width="350">
 </p>
 
 ##  Explanations
