@@ -24,6 +24,19 @@ resource "helm_release" "monitoring_stack" {
       nodegroup_name       = "default"
       loki_service_account = "monitoring-stack-loki"
       loki_iam_role_arn    = module.loki_irsa.iam_role_arn
+    }),
+
+    yamlencode({
+      grafana = {
+        enabled = true
+        "grafana.ini" = {
+          server = {
+            domain              = var.grafana_url
+            root_url            = "https://${var.grafana_url}/"
+            serve_from_sub_path = true
+          }
+        }
+      }
     })
   ]
 

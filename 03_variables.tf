@@ -90,10 +90,16 @@ variable "alb_group_name" {
   default     = "eks-alb"
 }
 
+variable "grafana_url" {
+  description = "The external URL for ArgoCD"
+  type        = string
+  default     = "grafana.sreevasmk.in"
+}
+
 variable "argocd_url" {
   description = "The external URL for ArgoCD"
   type        = string
-  default     = "https://argocd.sreevasmk.in"
+  default     = "argocd.sreevasmk.in"
 }
 
 variable "my_ip_cidr" {

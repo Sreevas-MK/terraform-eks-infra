@@ -1,0 +1,45 @@
+resource "kubernetes_ingress_v1" "argocd_shared_ingress" {
+  depends_on = [
+    kubernetes_namespace.argocd,
+    helm_release.argocd,
+    module.eks_blueprints_addons
+  ]
+  metadata {
+    name      = "argocd-server-ingress"
+    namespace = "argocd"
+    annotations = {
+      "kubernetes.io/ingress.class"               = "alb"
+      "alb.ingress.kubernetes.io/scheme"          = "internet-facing"
+      "alb.ingress.kubernetes.io/group.name"      = var.alb_group_name
+      "alb.ingress.kubernetes.io/certificate-arn" = var.certificate_arn
+      "alb.ingress.kubernetes.io/listen-ports"    = "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
+      "alb.ingress.kubernetes.io/ssl-redirect"    = "443"
+      "alb.ingress.kubernetes.io/target-type"     = "ip"
+
+      # CRITICAL FOR ARGOCD BEHIND ALB
+      "alb.ingress.kubernetes.io/backend-protocol"     = "HTTPS"
+      "alb.ingress.kubernetes.io/healthcheck-protocol" = "HTTPS"
+      "alb.ingress.kubernetes.io/healthcheck-path"     = "/healthz"
+    }
+  }
+
+  spec {
+    rule {
+      host = var.argocd_url
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = "argocd-server"
+              port {
+                number = 443 # Port 443 is required when backend-protocol is HTTPS
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

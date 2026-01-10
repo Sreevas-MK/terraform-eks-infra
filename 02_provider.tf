@@ -66,12 +66,13 @@ provider "kubectl" {
 }
 
 provider "argocd" {
-  core = true
-  # This tells the provider to use your KUBECONFIG instead of a URL
+  # Change this to talk to the server directly
+  server_addr = "argocd-server.argocd.svc.cluster.local:443"
+  insecure    = true
+  # You can keep the kubernetes block for authentication
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
@@ -79,4 +80,3 @@ provider "argocd" {
     }
   }
 }
-
