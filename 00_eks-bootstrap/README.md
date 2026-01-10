@@ -2,6 +2,8 @@
 
 This directory contains the "Foundation Code." Its sole purpose is to provision the infrastructure required to store the Terraform State safely in the cloud rather than on a local machine.
 
+##  Bootstrap Architecture
+![Bootstrap Architecture](./images/00_eks_bootstrap.png)
 
 ## Technical Explanations
 
