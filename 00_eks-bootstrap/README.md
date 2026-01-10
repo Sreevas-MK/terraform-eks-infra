@@ -3,11 +3,13 @@
 This directory contains the "Foundation Code." Its sole purpose is to provision the infrastructure required to store the Terraform State safely in the cloud rather than on a local machine.
 
 ##  Bootstrap Architecture
-![Bootstrap Architecture](./images/00_eks_bootstrap.png)
 
-## Technical Explanations
+<p align="center">
+  <img src="./images/00_eks_bootstrap.png" alt="Bootstrap Architecture" width="600">
+</p>
 
-### The "Chicken and Egg" Problem
+##  Explanations
+
 Terraform needs a place to store its state file (`terraform.tfstate`). If we store it in the same cluster we are building, we can't manage it if the cluster breaks. 
 
 This sub-module solves that by creating two independent AWS resources:
