@@ -10,15 +10,24 @@ This repository contains a full-stack Infrastructure-as-Code (IaC) deployment fo
 
 Before the main infrastructure can be managed, you must create a secure place to store the Terraform State.
 
-1. **Navigate to:** `cd 00_eks-bootstrap/`
-2. **Initialize & Apply:** Run `terraform init` and `terraform apply`.
+1. **Navigate to 00_eks-bootstrap directory:** 
+```bash
+cd 00_eks-bootstrap/
+```
+
+2. **Initialize & Apply:** Run
+```bash
+terraform init
+terraform apply
+```
+
 3. This creates the S3 bucket and DynamoDB table used for state locking.
 
 ### Step 2: Main Infrastructure Deployment
 
 Once bootstrap is complete, move to the root directory to deploy the full stack.
 
-1. **Configure Variables:** Edit `03_variables.tf` to match your environment settings (e.g., `my_ip_cidr`, `project_name`.
+1. **Configure Variables:** Edit `03_variables.tf` to match your environment settings (e.g., `my_ip_cidr`, `project_name`).
 2. **Initialize:**
 ```bash
 terraform init
