@@ -119,7 +119,7 @@ This file shows outputs for VPC and its subnets.
 
 ---
 
-##  Phase 3: EKS Cluster & IAM Integration
+###  Phase 4: EKS Cluster & IAM Integration
 
 This section covers the creation of the Kubernetes Control Plane, the specialized networking add-ons, and the IAM Roles for Service Accounts (IRSA) that bridge K8s to AWS.
 
@@ -181,7 +181,7 @@ This is the main cluster configuration file. It manages the cluster, nodes, and 
 
 ---
 
-##  Phase 4: Secure Access & Bastion Management
+###  Phase 5: Secure Access & Bastion Management
 
 <details>
 <summary><b>Detailed Breakdown: 08_bastion_host_security_group.tf</b></summary>
@@ -245,7 +245,7 @@ This file bridges the gap between the Bastion Host and the Kubernetes API.
 ---
 
 
-##  Phase 5: Data Layer (RDS & ElastiCache)
+###  Phase 6: Data Layer (RDS & ElastiCache)
 
 <details>
 <summary><b>Detailed Breakdown: 12_rds_eca_securitygroup.tf</b></summary>
@@ -308,7 +308,7 @@ This file provisions the Valkey (Redis-compatible) caching layer.
 
 ---
 
-## Phase 6: External Secrets Operator (ESO) & IAM Security
+### Phase 7: External Secrets Operator (ESO) & IAM Security
 
 This phase is critical for security. It ensures that the database credentials created by AWS are pulled into Kubernetes automatically and securely without any human ever seeing the password.
 
@@ -355,9 +355,7 @@ This file installs the operator software and configures the Cluster-level connec
 
 </details>
 
----
-
-### The Secret Flow
+#### The Secret Flow
 
 1. **AWS RDS** creates a master password and saves it in **AWS Secrets Manager**.
 2. **Terraform** installs the **ESO Pod** into the cluster.
