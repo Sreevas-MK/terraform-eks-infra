@@ -364,3 +364,177 @@ This file installs the operator software and configures the Cluster-level connec
 5. The **ESO Pod** reads the password and creates a standard **Kubernetes Secret** that your App Pods can use.
 
 ---
+
+##  Phase 8: Full-Stack Observability (Loki, Prometheus & Grafana)
+
+This phase builds a professional-grade monitoring and logging pipeline. Instead of storing logs on expensive and volatile EBS disks, we offload everything to **AWS S3** for long-term durability and cost-efficiency. This ensures that even if your nodes are deleted, your logs remain safe and searchable.
+
+---
+
+<details>
+<summary><b>Detailed Breakdown: 17_monitoring_s3.tf</b></summary>
+
+This file creates the "Hard Drive" in the cloud where Loki will store its data.
+
+* **aws_s3_bucket "loki_logs"**:
+* `bucket`: Dynamically names the bucket using your project prefix (e.g., `eks-infra-loki-logs`).
+* `force_destroy = true`: Allows the bucket to be deleted during `terraform destroy` even if it contains log files.
+* **module "loki_irsa"**:
+* `source`: Creates an IAM Role for Service Accounts (IRSA).
+* `role_name`: The name of the role as it appears in the AWS Console.
+* `namespace_service_accounts`: This is the security glue. It says "Only the pod using the service account `monitoring-stack-loki` in the `monitoring` namespace can use this role."
+* **resource "aws_iam_policy" "loki_s3_policy"**:
+* `s3:ListBucket`: Allows Loki to see the "folders" and files inside the bucket.
+* `s3:GetObject`: Allows Loki to read logs when you search for them in Grafana.
+* `s3:PutObject`: Allows Loki to write new logs coming in from the cluster.
+* `s3:DeleteObject`: Allows Loki to clean up old logs based on your retention policy.
+
+</details>
+
+<details>
+<summary><b>Detailed Breakdown: 18_monitoring_helm.tf</b></summary>
+
+This file handles the deployment and complex logic of the monitoring software.
+
+* **resource "kubernetes_namespace_v1" "monitoring"**:
+* Creates an isolated logical boundary in Kubernetes specifically for monitoring tools.
+* **resource "helm_release" "monitoring_stack"**:
+* `recreate_pods = true`: Forces pods to restart if you change the configuration, ensuring no old settings linger.
+* `templatefile(...)`: This is where the magic happens. It takes the `values-s3.yaml.tpl` file and injects your real AWS bucket names and IAM Role ARNs into the configuration.
+* `grafana.ini`: Configures the Grafana web server.
+* `domain / root_url`: Sets the URL (`grafana.sreevasmk.in`) and ensures that when you click a link in Grafana, it uses the secure HTTPS domain.
+* `serve_from_sub_path`: Required for the Application Load Balancer to route traffic to Grafana correctly.
+
+</details>
+
+<details>
+<summary><b>Detailed Breakdown: 19_grafana_ingress.tf</b></summary>
+
+This file makes Grafana accessible via the internet through an AWS Application Load Balancer.
+
+* **metadata.annotations**:
+* `ingress.class = "alb"`: Triggers the AWS LB Controller to provision a physical Load Balancer.
+* `group.name`: This is a cost-saver. It merges this Ingress with your App and ArgoCD into one single ALB.
+* `certificate-arn`: Attaches your SSL certificate for HTTPS encryption.
+* `ssl-redirect`: Automatically redirects any user on port 80 (HTTP) to 443 (HTTPS).
+* `healthcheck-path = "/api/health"`: Tells the ALB how to check if Grafana is actually running.
+
+</details>
+
+<details>
+<summary><b>Detailed Breakdown: values-s3.yaml.tpl</b></summary>
+
+This is the most important configuration file. Here is exactly what the code does:
+
+* **Loki (The Log Database)**:
+* `image.tag: 2.9.0`: Pins the version of Loki to ensure stability.
+* `serviceAccount.annotations`: This injects the `${loki_iam_role_arn}`. Without this line, Loki cannot talk to S3 and will crash.
+* `persistence.enabled: false`: We disable "Persistent Volumes" because we don't want to use expensive AWS EBS disks; we use S3 instead.
+* `config.common.storage.s3`: Tells Loki the exact bucket name and AWS region to store logs.
+* `schema_config`: Configures how logs are indexed.
+* `store: boltdb-shipper`: The modern way to handle indexes.
+* `object_store: s3`: Tells Loki that the actual log "blobs" should live in S3.
+* `schema: v13`: The latest data structure for Loki logs.
+* `retention_period: 24h`: Every 24 hours, Loki will delete old logs from S3 to keep your AWS bill low.
+* **Promtail (The Log Collector)**:
+* `enabled: true`: Promtail runs as a "DaemonSet" (one pod on every node).
+* `clients.url`: Tells Promtail to send all the logs it finds to the Loki service at port 3100.
+* `scrape_configs`:
+* `role: pod`: Promtail looks at every single Pod running on the node.
+* `relabel_configs`: It takes the Pod's name and Namespace and turns them into "labels" in Grafana so you can filter logs by "App" or "Namespace."
+* **Prometheus (The Metrics Engine)**:
+* `enabled: true`: Starts the metrics collection.
+* `extraScrapeConfigs`: This is a huge section that tells Prometheus to "auto-discover" everything in the cluster.
+* `job_name: kubernetes-pods-all`: Finds every pod and asks for its CPU/RAM usage.
+* `job_name: kubernetes-nodes-all`: Checks the health of the physical EC2 instances.
+* **Node Exporter**:
+* `tolerations`: These lines allow the monitoring agent to run on "special" nodes that might have taints (like the control plane), ensuring 100% coverage of your cluster.
+
+</details>
+
+<details>
+<summary><b>Line-by-Line Breakdown: monitoring-configmap.yml</b></summary>
+
+This file configures Grafana's "Phonebook" so it knows where to find data.
+
+* **metadata.labels**:
+* `grafana_datasource: "1"`: This label is critical. Grafana has a "sidecar" container that searches the cluster for any ConfigMap with this label and automatically adds it as a source.
+* **data.datasources.yaml**:
+* `name: Prometheus`: The name that appears in the Grafana dropdown.
+* `url: http://monitoring-stack-prometheus-server:9090`: The internal network address of Prometheus.
+* `name: Loki`: The name for the log source.
+* `url: http://monitoring-stack-loki:3100`: The internal network address of Loki.
+
+</details>
+
+---
+
+##  Phase 9: ArgoCD & Automated GitOps
+
+<details>
+<summary><b>Detailed Breakdown: 20_argocd.tf</b></summary>
+
+This file installs the ArgoCD engine itself.
+
+* **kubernetes_namespace "argocd"**:
+* Creates a dedicated, isolated home for the ArgoCD system.
+* `depends_on`: Ensures the EKS cluster and nodes are fully active before trying to install software.
+
+
+* **helm_release "argocd"**:
+* `repository`: Pulls from the official `argo-helm` charts.
+* `set { configs.cm.url }`: Tells ArgoCD its own public address (`argocd.sreevasmk.in`) so it can generate correct internal links.
+* `set { configs.params.server.insecure = "true" }`: This allows the AWS Load Balancer to talk to ArgoCD over plain HTTP/HTTPS without complicated internal certificate handshakes, as the ALB handles the external SSL.
+
+
+</details>
+
+<details>
+<summary><b>Detailed Breakdown: 21_argocd_application.tf</b></summary>
+
+This is the "Brain" of your application deployment. It connects the infrastructure you built (RDS, Valkey) to your application code.
+
+* **kubernetes_namespace_v1 "app_ns"**:
+* Creates the namespace where your actual Flask app will run.
+* **Pod Security Labels**: These are modern K8s security standards.
+* `enforce: baseline`: Prevents pods from running with dangerous "root" privileges.
+* `warn: restricted`: Warns the developer if they are not following the strictest security best practices.
+
+
+* **kubectl_manifest "employees_app"**:
+* This is an **ArgoCD Application Custom Resource**. It defines the "What, Where, and How."
+* `source`: Points to your GitHub repo (`repoURL`) and the specific folder where your Helm charts live (`path`).
+* **Helm Parameters (Injecting Infrastructure into Apps)**:
+* `flask.secrets.DB_HOST`: Injects the real RDS endpoint address created in Phase 5.
+* `flask.secrets.REDIS_HOST`: Injects the Valkey endpoint. The `split` function is used to remove the port number from the URL string.
+* `flask.secrets.remoteRef.key`: Passes the **AWS Secrets Manager ARN**. The External Secrets Operator (Phase 6) will use this to grab the DB password.
+
+
+* `syncPolicy`:
+* `automated.prune`: If you delete a resource from Git, ArgoCD will automatically delete it from K8s.
+* `automated.selfHeal`: If someone manually changes something in K8s, ArgoCD will overwrite it back to the Git state.
+
+
+</details>
+
+<details>
+<summary><b>Detailed Breakdown: 22_argocd_ingress.tf</b></summary>
+
+This file exposes the ArgoCD UI to you so you can monitor your deployments in a browser.
+
+* **metadata.annotations**:
+* `ingress.class = "alb"`: Triggers the AWS ALB creation.
+* `group.name`: **CRITICAL.** This joins ArgoCD, Grafana, and your Flask app under **one single Load Balancer**. This saves you roughly **$40/month** in AWS costs by sharing one ALB across three services.
+* `backend-protocol = "HTTPS"`: Since ArgoCD is highly secure, it expects internal traffic to be encrypted.
+* `healthcheck-path = "/healthz"`: The specific URL the ALB pings to make sure ArgoCD is healthy.
+
+
+* **spec.rule**:
+* `host`: Listens for `argocd.sreevasmk.in`.
+* `backend.service.port.number = 443`: Forwards the traffic to ArgoCD's secure internal port.
+
+
+
+</details>
+
+---
