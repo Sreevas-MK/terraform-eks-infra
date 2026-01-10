@@ -4,7 +4,39 @@ This repository contains a full-stack Infrastructure-as-Code (IaC) deployment fo
 
 ---
 
+## Deployment Guide
+
+### Step 1: Remote State Bootstrap
+
+Before the main infrastructure can be managed, you must create a secure place to store the Terraform State.
+
+1. **Navigate to:** `cd 00_eks-bootstrap/`
+2. **Initialize & Apply:** Run `terraform init` and `terraform apply`.
+3. This creates the S3 bucket and DynamoDB table used for state locking.
+
+### Step 2: Main Infrastructure Deployment
+
+Once bootstrap is complete, move to the root directory to deploy the full stack.
+
+1. **Configure Variables:** Edit `03_variables.tf` to match your environment settings (e.g., `my_ip_cidr`, `project_name`.
+2. **Initialize:**
+```bash
+terraform init
+
+```
+
+3. **Deploy:**
+```bash
+terraform apply
+
+```
+
+*Note: This process takes approximately 15~20 minutes.*
+
+---
 ## Project Phases
+
+To deploy this infrastructure safely, follow the sequence below. Click a Phase name to jump to its detailed explanation.
 
 | Phase | Component | Key Technology | Purpose |
 | --- | --- | --- | --- |
@@ -14,8 +46,8 @@ This repository contains a full-stack Infrastructure-as-Code (IaC) deployment fo
 | [Phase 4](#phase-4-eks-cluster--iam-integration) | **Compute** | Amazon EKS 1.33 | Provision the control plane and managed node groups. |
 | [Phase 5](#phase-5-secure-access--bastion-management) | **Access** | Bastion Host | Secure SSH entry-point into the private network nodes. |
 | [Phase 6](#phase-6-data-layer-rds--elasticache) | **Storage** | RDS & Valkey | Deploy managed database and distributed caching layers. |
-| [Phase 7](#phase-7-external-secrets-operator-eso--iam-security) | **Security** | ESO & Secrets Mgr | Automate secure credential injection into K8s pods. |
-| [Phase 8](#phase-8-full-stack-observability-loki-prometheus--grafana) | **Observability** | PLG Stack | Centralized logging (S3) and metric dashboards. |
+| [Phase 7](#phase-7-external-secrets-operator-eso--iam-security) | **Security** | ESO & Secrets Manager | Automate secure credential injection into K8s pods. |
+| [Phase 8](#phase-8-full-stack-observability-loki-prometheus--grafana) | **Observability** | PLG Stack | Centralized logging (S3) and metric dashboards ( Prometheus, Loki, & Grafana) |
 | [Phase 9](#phase-9-argocd--automated-gitops) | **Continuous Delivery** | ArgoCD | Sync GitHub repositories directly to the cluster. |
 
 ---
@@ -251,6 +283,19 @@ This file bridges the gap between the Bastion Host and the Kubernetes API.
 * Policy Association:
 * `policy_arn = "...AmazonEKSClusterAdminPolicy"`: Grants the Bastion full **Administrator** rights inside Kubernetes.
 * `access_scope`: Set to `cluster`, meaning the Bastion can manage all namespaces and resources.
+
+</details>
+
+<details>
+<summary><b>Detailed Breakdown: files/bastion_setup.sh</b></summary>
+
+This is a **User Data script**. It runs automatically the very first time the Bastion EC2 instance boots up, ensuring your management environment is "ready to work" without manual installation.
+
+* **System Prep**: Updates the OS and installs utility tools like `jq` (for parsing JSON) and `unzip`.
+* **AWS CLI**: Installs the latest Version 2 of the AWS command-line tool.
+* **kubectl**: The primary tool for running commands against Kubernetes clusters. It dynamically fetches the latest stable version.
+* **Helm**: Installs the "Package Manager for Kubernetes," which is used in later phases to deploy ArgoCD and the Monitoring stack.
+* **Verification**: The script ends by printing the versions to the system log, so you can verify the setup was successful.
 
 </details>
 
