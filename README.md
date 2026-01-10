@@ -365,11 +365,10 @@ This file installs the operator software and configures the Cluster-level connec
 
 ---
 
-##  Phase 8: Full-Stack Observability (Loki, Prometheus & Grafana)
+###  Phase 8: Full-Stack Observability (Loki, Prometheus & Grafana)
 
 This phase builds a professional-grade monitoring and logging pipeline. Instead of storing logs on expensive and volatile EBS disks, we offload everything to **AWS S3** for long-term durability and cost-efficiency. This ensures that even if your nodes are deleted, your logs remain safe and searchable.
 
----
 
 <details>
 <summary><b>Detailed Breakdown: 17_monitoring_s3.tf</b></summary>
@@ -469,7 +468,7 @@ This file configures Grafana's "Phonebook" so it knows where to find data.
 
 ---
 
-##  Phase 9: ArgoCD & Automated GitOps
+###  Phase 9: ArgoCD & Automated GitOps
 
 <details>
 <summary><b>Detailed Breakdown: 20_argocd.tf</b></summary>
