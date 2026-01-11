@@ -1,6 +1,6 @@
 resource "kubernetes_ingress_v1" "argocd_shared_ingress" {
   depends_on = [
-    kubernetes_namespace.argocd,
+    kubernetes_namespace_v1.argocd,
     helm_release.argocd,
     module.eks_blueprints_addons
   ]

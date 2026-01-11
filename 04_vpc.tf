@@ -1,3 +1,7 @@
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -5,7 +9,11 @@ module "vpc" {
   name = var.project_name
   cidr = var.vpc_cidr_block
 
-  azs                             = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+
+  ## This ensures you ALWAYS take exactly 3 zones, even in regions with 6. It is because we have only 3 subnets.
+
+  azs = slice(data.aws_availability_zones.available.names, 0, 3)
+
   public_subnets                  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
   private_subnets                 = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
   create_database_subnet_group    = true
