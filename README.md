@@ -674,3 +674,132 @@ This file exposes the ArgoCD UI to you so you can monitor your deployments in a 
 </details>
 
 ---
+
+## Challenges & Learnings
+
+Multiple failures occurred during provisioning, syncing, runtime, and destruction.
+
+---
+
+### 1. Bastion Host & Resource Sizing
+
+**Issue:**  
+The initial Bastion Host was launched with a small instance type (`t2.micro`) and a 2GB root disk.
+
+**Impact:**  
+Tool installations (Terraform, AWS CLI, kubectl, Helm) failed intermittently due to disk exhaustion.
+
+**Solution:**  
+Increased the root volume to **5GB** and used a stable Amazon Linux AMI.
+
+**Lesson Learned:**  
+Bastion hosts must be sized realistically. Under-provisioned tooling nodes slow debugging and hide real issues.
+
+---
+
+### 2. Terraform Module Dependency & `depends_on` Issues
+
+**Issue:**  
+Terraform failed during EKS node group and IRSA creation due to unresolved implicit dependencies.
+
+**Observed Errors:**  
+- `Invalid count argument` in EKS managed node groups  
+- IAM roles not attached before node group creation  
+
+**Solution:**  
+Explicit `depends_on` relationships were added between:
+- EKS cluster → node groups  
+- IAM roles → IRSA modules  
+
+Terraform does not always infer execution order correctly in complex infrastructures. Explicit dependency control is critical.
+
+---
+
+### 3. External Secrets Operator (ESO) Sync Timing Failure
+
+**The Issue:** When the cluster first starts, the Application pods try to start immediately. However, they need a database password to boot. Because the password comes from AWS Secrets Manager via the "External Secrets Operator" (ESO), there is a 30-60 second delay before the password actually appears in Kubernetes.
+
+**The Impact:** The pods looked for a secret that didn't exist yet, got confused, and crashed (`CreateContainerConfigError`).
+
+
+**Fix:**
+1. **Refresh Interval:** Set the secret to check for updates every 10 seconds (`refreshInterval: 10s`) in application repository. This ensures that as soon as AWS is ready, the secret is created.
+2. **Self-Healing:** Configured ArgoCD with "Self-Heal." Once the secret finally arrives, ArgoCD detects the pod failure and restarts the app automatically.
+
+---
+
+### 4. EKS NodeSelector & Label Misconfiguration
+
+**Issue:**
+I configured the EKS Managed Node Groups with specific custom labels (e.g., `workload=app`) and simultaneously set the Cluster Add-ons (like VPC-CNI and CoreDNS) to only run on nodes with those specific labels using a `nodeSelector`.
+
+**Impact:**
+EKS node groups became stuck in provisioning and system pods remained in `Pending` state.
+
+**Solution:**
+Removed node selectors during bootstrap and applied labels only after node stabilization.
+
+Over-constraining scheduling during cluster bootstrap can break EKS provisioning.
+
+---
+
+### 5. Redis (Valkey) SSL & Endpoint String Manipulation
+
+**The Issue:**
+The Flask application failed to connect to the Valkey (Redis) cluster, resulting in  connection closures or handshake errors.
+
+**The Root Cause:**
+
+* **SSL Requirement:** The ElastiCache cluster was provisioned with **Transit Encryption (TLS)**. The application driver required an explicit `REDIS_SSL=true` flag to initiate the secure `rediss://` handshake.
+* **Port Formatting Conflict:** The AWS Terraform output for the `replication_group_configuration_endpoint_address` includes the port (e.g., `...6379`). The application's Helm chart logic was adding the port a second time, creating an invalid address like `hostname:6379:6379`.
+
+**The Fix (Terraform Implementation):**
+I implemented the following logic in the application deployment module to normalize the connection string:
+
+```hcl
+# Extracting only the hostname to prevent port duplication
+- name: "flask.secrets.REDIS_HOST"
+  value: "${split(":", module.valkey_cache.replication_group_configuration_endpoint_address)[0]}"
+
+# Forcing SSL handshake for encrypted Transit
+- name: "flask.secrets.REDIS_SSL"
+  value: "true"
+
+```
+AWS-managed service outputs often contain extra metadata (like ports). When passing these to Kubernetes or Helm, you must perform **string manipulation** to match the application's expected format. Additionally, security features like "Transit Encryption" are not transparent; they require explicit application-side configuration to work.
+
+---
+
+### 6. ALB Cost & Multi-App Ingress Optimization
+
+**Issue:**
+Separate ingress resources would have created three ALBs (ArgoCD, Grafana, App).
+
+**Impact:**
+Unnecessary AWS cost.
+
+**Solution:**
+Used a shared `group.name` annotation to run all services behind a single ALB.
+
+Design must consider cost efficiency, not just functionality.
+
+---
+
+### 7. Terraform Destroy Failures (Ingress & ALB Dependencies)
+
+**Issue:**
+`terraform destroy` hung or failed due to ALB dependencies created by:
+
+* Grafana Ingress
+* ArgoCD Ingress
+
+**Root Cause:**
+AWS ALB could not be deleted while Kubernetes ingress resources still existed.
+
+**Solution:**
+Manually deleted ingress resources first, waited for ALB cleanup, then re-ran `terraform destroy`.
+
+Destroy paths are more complex than create paths. Cloud resources often have hidden reverse dependencies.
+
+---
+
