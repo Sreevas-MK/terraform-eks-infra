@@ -608,6 +608,8 @@ This file configures Grafana so it knows where to find data.
 
 ###  Phase 9: ArgoCD & Automated GitOps
 
+This phase sets up **ArgoCD**, the tool that automates your deployments from Git into Kubernetes. Instead of manually applying YAMLs or Helm charts every time you update your app, ArgoCD constantly monitors your Git repository and makes sure the cluster matches exactly what's declared in Git.  
+
 <details>
 <summary><b>20_argocd.tf - ArgoCD installation</b></summary>
 
@@ -629,7 +631,7 @@ This file installs the ArgoCD engine itself.
 <details>
 <summary><b>21_argocd_application.tf - ArgoCD application deployment</b></summary>
 
-This is the "Brain" of your application deployment. It connects the infrastructure you built (RDS, Valkey) to your application code.
+It connects the infrastructure you built (RDS, Valkey) to your application code.
 
 * **kubernetes_namespace_v1 "app_ns"**:
   * Creates the namespace where your actual Flask app will run.
