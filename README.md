@@ -675,6 +675,129 @@ This file exposes the ArgoCD UI to you so you can monitor your deployments in a 
 
 ---
 
+## Project Demo & Validation Videos
+
+This section contains a series of recorded demo videos showcasing end-to-end validation of the EKS platform.
+The videos demonstrate cluster health checks, ingress and load balancer verification, application functionality with database operations, and data persistence across application restarts.
+
+###  Initial Node & Cluster Checks (Bastion Host)
+
+**Purpose:**
+Validate EKS cluster access, node readiness, namespaces, workloads, and ingress resources from the bastion host.
+
+**Actions Performed:**
+
+* Configure kubeconfig for the EKS cluster
+* Verify node availability and pod capacity
+* Inspect namespaces and running workloads
+* Validate ingress resources across namespaces
+
+**Commands Used:**
+
+```bash
+aws eks update-kubeconfig --region ap-south-1 --name eks-infra-cluster
+
+kubectl get nodes
+kubectl describe node <node-name> | grep pod
+
+kubectl get ns
+kubectl get all -n flask-mysql-redis-app
+kubectl get all -n argocd
+kubectl get all -n monitoring
+
+kubectl get ingress -A
+```
+
+**Video Link:**
+ [https://youtu.be/k190lIqya7I](https://youtu.be/k190lIqya7I)
+
+---
+
+###  Ingress & Load Balancer Verification
+
+**Purpose:**
+Validate ingress routing, DNS, and AWS Application Load Balancer configuration.
+
+**Actions Performed:**
+
+* Inspect ALB configuration in AWS Console
+* Verify HTTPS routing for all exposed services
+* Confirm ingress rules are functioning correctly
+
+**Verified URLs:**
+
+* Grafana: [https://grafana.sreevasmk.in](https://grafana.sreevasmk.in)
+* ArgoCD: [https://argocd.sreevasmk.in](https://argocd.sreevasmk.in)
+* Application: [https://app.sreevasmk.in](https://app.sreevasmk.in)
+
+**Video Link:**
+[https://youtu.be/fLqPJPAIo0E](https://youtu.be/fLqPJPAIo0E)
+
+---
+
+###  Application Functionality & MySQL Validation
+
+**Purpose:**
+Validate application connectivity to Amazon RDS MySQL and confirm database write operations.
+
+**Actions Performed:**
+
+* Launch a temporary MySQL client pod
+* Connect to Amazon RDS MySQL instance
+* Insert records into the application database
+
+**Commands Used:**
+
+```bash
+kubectl run mysql-client --rm -it --image=mysql:8.0 -- /bin/bash
+
+mysql -h eks-infra-mysql.cf68siug04ay.ap-south-1.rds.amazonaws.com \
+  -P 3306 -u appadmin -p
+```
+
+**SQL Operations:**
+
+```sql
+INSERT INTO employees (id,name,age,email) VALUES
+(100,"Alex",25,"alex@gmail.com"),
+(101,"Ben",28,"ben@gmail.com"),
+(102,"Christy",26,"christy@gmail.com"),
+(103,"Emily",30,"emily@gmail.com");
+```
+
+**Video Link:**
+[https://youtu.be/S_M4QLjZgWE](https://youtu.be/S_M4QLjZgWE)
+
+---
+
+###  Data Persistence Validation
+
+**Purpose:**
+Verify data persistence by deleting the application deployment and confirming data remains intact.
+
+**Actions Performed:**
+
+* Delete the Flask application deployment
+* Redeploy / re-access the application
+* Validate previously inserted MySQL data still exists
+
+**Command Used:**
+
+```bash
+kubectl delete deployment <flask-app-deployment-name> -n flask-mysql-redis-app
+```
+
+**Result:**
+
+* Application pod recreation confirmed
+* Database records persisted successfully
+
+**Video Link:**
+[https://youtu.be/yz8HMKDz0w8](https://youtu.be/yz8HMKDz0w8)
+
+
+---
+
 ## Challenges & Learnings
 
 Multiple failures occurred during provisioning, syncing, runtime, and destruction.
