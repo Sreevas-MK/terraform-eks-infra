@@ -680,7 +680,8 @@ This file exposes the ArgoCD UI to you so you can monitor your deployments in a 
 This section contains a series of recorded demo videos showcasing end-to-end validation of the EKS platform.
 The videos demonstrate cluster health checks, ingress and load balancer verification, application functionality with database operations, and data persistence across application restarts.
 
-###  Initial Node & Cluster Checks (Bastion Host)
+<details>
+<summary><b>Initial Node & Cluster Checks (Bastion Host)</b></summary>
 
 **Purpose:**
 Validate EKS cluster access, node readiness, namespaces, workloads, and ingress resources from the bastion host.
@@ -711,9 +712,10 @@ kubectl get ingress -A
 **Video Link:**
  [https://youtu.be/k190lIqya7I](https://youtu.be/k190lIqya7I)
 
----
+</details>
 
-###  Ingress & Load Balancer Verification
+<details>
+<summary><b>Ingress & Load Balancer Verification</b></summary>
 
 **Purpose:**
 Validate ingress routing, DNS, and AWS Application Load Balancer configuration.
@@ -724,18 +726,13 @@ Validate ingress routing, DNS, and AWS Application Load Balancer configuration.
 * Verify HTTPS routing for all exposed services
 * Confirm ingress rules are functioning correctly
 
-**Verified URLs:**
-
-* Grafana: [https://grafana.sreevasmk.in](https://grafana.sreevasmk.in)
-* ArgoCD: [https://argocd.sreevasmk.in](https://argocd.sreevasmk.in)
-* Application: [https://app.sreevasmk.in](https://app.sreevasmk.in)
-
 **Video Link:**
 [https://youtu.be/fLqPJPAIo0E](https://youtu.be/fLqPJPAIo0E)
 
----
+</details>
 
-###  Application Functionality & MySQL Validation
+<details>
+<summary><b>Application Functionality & MySQL Validation</b></summary>
 
 **Purpose:**
 Validate application connectivity to Amazon RDS MySQL and confirm database write operations.
@@ -745,13 +742,14 @@ Validate application connectivity to Amazon RDS MySQL and confirm database write
 * Launch a temporary MySQL client pod
 * Connect to Amazon RDS MySQL instance
 * Insert records into the application database
+* Check application URL to verify the changes
 
 **Commands Used:**
 
 ```bash
 kubectl run mysql-client --rm -it --image=mysql:8.0 -- /bin/bash
 
-mysql -h eks-infra-mysql.cf68siug04ay.ap-south-1.rds.amazonaws.com \
+mysql -h <db_instance_address> \
   -P 3306 -u appadmin -p
 ```
 
@@ -768,9 +766,10 @@ INSERT INTO employees (id,name,age,email) VALUES
 **Video Link:**
 [https://youtu.be/S_M4QLjZgWE](https://youtu.be/S_M4QLjZgWE)
 
----
+</details>
 
-###  Data Persistence Validation
+<details>
+<summary><b>Data Persistence Validation</b></summary>
 
 **Purpose:**
 Verify data persistence by deleting the application deployment and confirming data remains intact.
@@ -795,6 +794,7 @@ kubectl delete deployment <flask-app-deployment-name> -n flask-mysql-redis-app
 **Video Link:**
 [https://youtu.be/yz8HMKDz0w8](https://youtu.be/yz8HMKDz0w8)
 
+</details>
 
 ---
 
