@@ -802,9 +802,8 @@ kubectl delete deployment <flask-app-deployment-name> -n flask-mysql-redis-app
 
 Multiple failures occurred during provisioning, syncing, runtime, and destruction.
 
----
-
-### 1. Bastion Host & Resource Sizing
+<details>
+<summary><b>Bastion Host & Resource Sizing</b></summary>
 
 **Issue:**  
 The initial Bastion Host was launched with a small instance type (`t2.micro`) and a 2GB root disk.
@@ -818,9 +817,10 @@ Increased the root volume to **5GB** and used a stable Amazon Linux AMI.
 **Lesson Learned:**  
 Bastion hosts must be sized realistically. Under-provisioned tooling nodes slow debugging and hide real issues.
 
----
+</details>
 
-### 2. Terraform Module Dependency & `depends_on` Issues
+<details>
+<summary><b>Terraform Module Dependency & `depends_on` Issues</b></summary>
 
 **Issue:**  
 Terraform failed during EKS node group and IRSA creation due to unresolved implicit dependencies.
@@ -835,10 +835,10 @@ Explicit `depends_on` relationships were added between:
 - IAM roles → IRSA modules  
 
 Terraform does not always infer execution order correctly in complex infrastructures. Explicit dependency control is critical.
+</details>
 
----
-
-### 3. External Secrets Operator (ESO) Sync Timing Failure
+<details>
+<summary><b>External Secrets Operator (ESO) Sync Timing Failure</b></summary>
 
 **The Issue:** When the cluster first starts, the Application pods try to start immediately. However, they need a database password to boot. Because the password comes from AWS Secrets Manager via the "External Secrets Operator" (ESO), there is a 30-60 second delay before the password actually appears in Kubernetes.
 
@@ -849,9 +849,10 @@ Terraform does not always infer execution order correctly in complex infrastruct
 1. **Refresh Interval:** Set the secret to check for updates every 10 seconds (`refreshInterval: 10s`) in application repository. This ensures that as soon as AWS is ready, the secret is created.
 2. **Self-Healing:** Configured ArgoCD with "Self-Heal." Once the secret finally arrives, ArgoCD detects the pod failure and restarts the app automatically.
 
----
+</details>
 
-### 4. EKS NodeSelector & Label Misconfiguration
+<details>
+<summary><b>EKS NodeSelector & Label Misconfiguration</b></summary>
 
 **Issue:**
 I configured the EKS Managed Node Groups with specific custom labels (e.g., `workload=app`) and simultaneously set the Cluster Add-ons (like VPC-CNI and CoreDNS) to only run on nodes with those specific labels using a `nodeSelector`.
@@ -864,9 +865,10 @@ Removed node selectors during bootstrap and applied labels only after node stabi
 
 Over-constraining scheduling during cluster bootstrap can break EKS provisioning.
 
----
+</details>
 
-### 5. Redis (Valkey) SSL & Endpoint String Manipulation
+<details>
+<summary><b>Redis (Valkey) SSL & Endpoint String Manipulation</b></summary>
 
 **The Issue:**
 The Flask application failed to connect to the Valkey (Redis) cluster, resulting in  connection closures or handshake errors.
@@ -891,9 +893,10 @@ I implemented the following logic in the application deployment module to normal
 ```
 AWS-managed service outputs often contain extra metadata (like ports). When passing these to Kubernetes or Helm, you must perform **string manipulation** to match the application's expected format. Additionally, security features like "Transit Encryption" are not transparent; they require explicit application-side configuration to work.
 
----
+</details>
 
-### 6. ALB Cost & Multi-App Ingress Optimization
+<details>
+<summary><b>ALB Cost & Multi-App Ingress Optimization</b></summary>
 
 **Issue:**
 Separate ingress resources would have created three ALBs (ArgoCD, Grafana, App).
@@ -906,9 +909,11 @@ Used a shared `group.name` annotation to run all services behind a single ALB.
 
 Design must consider cost efficiency, not just functionality.
 
----
+</details>
 
-### 7. Terraform Destroy Failures (Ingress & ALB Dependencies)
+
+<details>
+<summary><b>Terraform Destroy Failures (Ingress & ALB Dependencies)</b></summary>
 
 **Issue:**
 `terraform destroy` hung or failed due to ALB dependencies created by:
@@ -923,6 +928,8 @@ AWS ALB could not be deleted while Kubernetes ingress resources still existed.
 Manually deleted ingress resources first, waited for ALB cleanup, then re-ran `terraform destroy`.
 
 Destroy paths are more complex than create paths. Cloud resources often have hidden reverse dependencies.
+
+</details>
 
 ---
 
