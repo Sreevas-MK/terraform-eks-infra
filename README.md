@@ -645,8 +645,8 @@ It connects the infrastructure you built (RDS, Valkey) to your application code.
   * `source`: Points to your GitHub repo (`repoURL`) and the specific folder where your Helm charts live (`path`).
 
 * **Helm Parameters (Injecting Infrastructure into Apps)**:
-  * `flask.secrets.DB_HOST`: Injects the real RDS endpoint address created in Phase 5.
-  * `flask.secrets.REDIS_HOST`: Injects the Valkey endpoint. The `split` function is used to remove the port number from the URL string.
+  * `flask.env.DB_HOST`: Injects the real RDS endpoint address created in Phase 5.
+  * `flask.env.REDIS_HOST`: Injects the Valkey endpoint. The `split` function is used to remove the port number from the URL string.
   * `flask.secrets.remoteRef.key`: Passes the **AWS Secrets Manager ARN**. The External Secrets Operator (Phase 6) will use this to grab the DB password.
 
 * **`syncPolicy`**:
@@ -758,11 +758,11 @@ I implemented the following logic in the application deployment module to normal
 
 ```hcl
 # Extracting only the hostname to prevent port duplication
-- name: "flask.secrets.REDIS_HOST"
+- name: "flask.env.REDIS_HOST"
   value: "${split(":", module.valkey_cache.replication_group_configuration_endpoint_address)[0]}"
 
 # Forcing SSL handshake for encrypted Transit
-- name: "flask.secrets.REDIS_SSL"
+- name: "flask.env.REDIS_SSL"
   value: "true"
 
 ```
