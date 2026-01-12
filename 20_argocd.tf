@@ -4,6 +4,9 @@ resource "kubernetes_namespace_v1" "argocd" {
   }
   depends_on = [
     module.eks_blueprints_addons,
+    module.eks.eks_managed_node_groups,
+    module.eks,
+    module.vpc,
     module.eks.eks_managed_node_groups
   ]
 }

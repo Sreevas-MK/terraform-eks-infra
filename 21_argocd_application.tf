@@ -2,7 +2,11 @@ resource "kubernetes_namespace_v1" "app_ns" {
   depends_on = [
     helm_release.argocd,
     module.valkey_cache,
-    module.db
+    module.db,
+    module.eks,
+    module.eks_blueprints_addons,
+    aws_instance.bastion,
+    module.vpc
   ]
   metadata {
     name = var.app_namespace
@@ -23,6 +27,8 @@ kind: Application
 metadata:
   name: ${var.app_name}
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
@@ -68,7 +74,13 @@ YAML
     kubernetes_namespace_v1.app_ns,
     helm_release.argocd,
     module.valkey_cache,
-    module.db
+    module.db,
+    module.eks,
+    module.eks_blueprints_addons,
+    module.eks.eks_managed_node_groups,
+    aws_instance.bastion,
+    module.eks.oidc_provider_arn,
+    module.vpc
   ]
   wait = false
 }

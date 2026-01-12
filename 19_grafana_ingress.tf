@@ -2,7 +2,12 @@ resource "kubernetes_ingress_v1" "grafana_ingress" {
   depends_on = [
     kubernetes_namespace_v1.monitoring,
     helm_release.monitoring_stack,
-    module.eks_blueprints_addons
+    module.eks_blueprints_addons,
+    module.eks,
+    module.eks.eks_managed_node_groups,
+    aws_instance.bastion,
+    module.eks.oidc_provider_arn,
+    module.vpc
   ]
 
   metadata {
