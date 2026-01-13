@@ -1,0 +1,47 @@
+name: "EKS Infrastructure Destroy (MANUAL ONLY)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: "Type DESTROY to confirm infrastructure deletion"
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform-destroy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: "ap-south-1"
+
+    steps:
+      - name: "Validate Destroy Confirmation"
+        run: |
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
+            echo " Destroy not confirmed. Exiting."
+            exit 1
+          fi
+
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Terraform"
+        uses: hashicorp/setup-terraform@v3.1.2
+
+      - name: "Generate SSH Key Files from Secrets"
+        run: |
+          mkdir -p files
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ./files/eks-key.pub
+
+      - name: "Terraform Init"
+        run: terraform init
+
+      - name: "Terraform Destroy"
+        run: terraform destroy -auto-approve
+
