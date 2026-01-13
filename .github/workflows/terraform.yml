@@ -32,13 +32,6 @@ jobs:
           mkdir -p files
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ./files/eks-key.pub
 
-#       - name: "Terraform Bootstrap (Manual Only)"
-#         working-directory: ./00_eks-bootstrap
-#         run: |
-#           terraform init
-#           terraform apply -auto-approve
-
-      # --- STEP 2: MAIN INFRASTRUCTURE (Runs on Push/PR) ---
       - name: "Main: Terraform Init & Apply"
         run: |
           terraform init
