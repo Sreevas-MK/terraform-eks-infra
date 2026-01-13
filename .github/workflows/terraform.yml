@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+        
   # This adds a "Run Workflow" button in GitHub to manually trigger Bootstrap
   workflow_dispatch:
     inputs:
