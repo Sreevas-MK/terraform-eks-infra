@@ -7,18 +7,10 @@ on:
   pull_request:
     branches:
       - main
-        
-  # This adds a "Run Workflow" button in GitHub to manually trigger Bootstrap
-  workflow_dispatch:
-    inputs:
-      action:
-        description: 'Choose action: bootstrap or apply'
-        required: true
-        default: 'apply'
-        type: choice
-        options:
-          - bootstrap
-          - apply
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   terraform:
@@ -26,7 +18,7 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ variables.AWS_REGION }}
+      AWS_REGION: "ap-south-1"
 
     steps:
       - name: "Checkout Code"
