@@ -4,7 +4,7 @@ data "aws_ami" "amazon_linux" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-x86_64"]
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
 }
 
@@ -20,7 +20,7 @@ resource "aws_instance" "bastion" {
   iam_instance_profile        = aws_iam_instance_profile.bastion_profile.name
 
   root_block_device {
-    volume_size = 5
+    volume_size = 8
     volume_type = "gp3"
     encrypted   = true
   }
