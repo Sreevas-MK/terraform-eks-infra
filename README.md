@@ -923,11 +923,25 @@ Design must consider cost efficiency, not just functionality.
 
 **Root Cause:**
 AWS ALB could not be deleted while Kubernetes ingress resources still existed.
+Orphaned Resources: The EKS Cluster and Node Groups were being destroyed before the Ingress resources.
 
-**Solution:**
-Manually deleted ingress resources first, waited for ALB cleanup, then re-ran `terraform destroy`.
+Controller Termination: When the Node Groups were deleted first, the aws-load-balancer-controller pod died. Without the controller, there was no process to send the "Delete ALB" command to AWS when the Ingress resource was finally reached in the destroy sequence.
 
-Destroy paths are more complex than create paths. Cloud resources often have hidden reverse dependencies.
+Hidden Dependencies: Cloud-provider-specific resources (like ALBs) created by Kubernetes controllers are not natively tracked in the Terraform state file, creating a "hidden" reverse dependency.
+
+To automate the fix and avoid manual intervention, the Terraform configuration was updated to enforce a strict destruction order using depends_on blocks:
+
+    Ingress Priority: Modified kubernetes_ingress_v1 resources to explicitly depend on the module.eks.eks_managed_node_groups and module.eks_blueprints_addons.
+
+    Destruction Flow: This forces Terraform to:
+
+        Delete the Ingress first (while the controller and nodes are still running).
+
+        Wait for the ALB to be removed by the controller.
+
+        Delete the Nodes only after the ALB is gone.
+
+        Delete the VPC last.
 
 </details>
 

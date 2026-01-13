@@ -1,0 +1,64 @@
+name: "EKS Infrastructure Pipeline"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  # This adds a "Run Workflow" button in GitHub to manually trigger Bootstrap
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose action: bootstrap or apply'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - bootstrap
+          - apply
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ variables.AWS_REGION }}
+
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Terraform"
+        uses: hashicorp/setup-terraform@v3.1.2
+
+      - name: Cache Terraform providers
+        uses: terraform-cache/terraform-cache@v1
+
+      - name: "Generate SSH Key Files from Secrets"
+        run: |
+          mkdir -p files
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ./files/eks-key.pub
+
+      # --- STEP 1: BOOTSTRAP (Only runs if manually triggered) ---
+      - name: "Terraform Bootstrap (Manual Only)"
+        if: github.event.inputs.action == 'bootstrap'
+        working-directory: ./00_eks-bootstrap
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      # --- STEP 2: MAIN INFRASTRUCTURE (Runs on Push/PR) ---
+      - name: "Main: Terraform Init"
+        if: github.event.inputs.action != 'bootstrap'
+        run: terraform init
+
+      - name: "Main: Terraform Plan"
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color
+
+      - name: "Main: Terraform Apply"
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
