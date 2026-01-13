@@ -27,9 +27,6 @@ jobs:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3.1.2
 
-      - name: Cache Terraform providers
-        uses: terraform-cache/terraform-cache@v1
-
       - name: "Generate SSH Key Files from Secrets"
         run: |
           mkdir -p files
@@ -44,14 +41,7 @@ jobs:
           terraform apply -auto-approve
 
       # --- STEP 2: MAIN INFRASTRUCTURE (Runs on Push/PR) ---
-      - name: "Main: Terraform Init"
-        if: github.event.inputs.action != 'bootstrap'
-        run: terraform init
-
-      - name: "Main: Terraform Plan"
-        if: github.event_name == 'pull_request'
-        run: terraform plan -no-color
-
-      - name: "Main: Terraform Apply"
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve
+      - name: "Main: Terraform Init & Apply"
+        run: |
+          terraform init
+          terraform apply -auto-approve
