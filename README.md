@@ -292,6 +292,11 @@ If you don't have a key, run the following command in your terminal:
 ssh-keygen -t rsa -b 4096 -f ./files/eks-key
 
 ```
+After generation, SSH requires strict permissions on the private key file. If the permissions are too open, SSH will reject the key for security reasons:
+```bash
+chmod 400 ./files/eks-key
+
+```
 
 While this project uses the name `eks-key.pub` by default, you can name your file anything. If you change the name, ensure you update the `public_key` path in `06_key_pair.tf` and the reference in `11_bastion_host_setup.tf`.
 
@@ -300,6 +305,7 @@ While this project uses the name `eks-key.pub` by default, you can name your fil
   1. Copy the contents of your `.pub` file.
   2. Add it as a GitHub Secret named `SSH_PUBLIC_KEY`.
   3. The workflow is pre-configured to automatically recreate the file at `./files/eks-key.pub` on the GitHub runner before running Terraform.
+  4. Keep your private key (`eks-key`) on your local server or management machine to log in later.
 
 * **SSH Key Setup**
   * `key_name`: The logical name used by AWS to reference the SSH key.
