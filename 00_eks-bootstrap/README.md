@@ -59,7 +59,7 @@ Once complete, verify that the following resources exist in the AWS Console:
 
 ---
 
-## Connection to Main Project
+### 4. Connection to Main Project
 
 After this phase is complete, the **Main Infrastructure** in the root directory will use these resources via the `01_s3_backend.tf` file:
 
@@ -75,4 +75,39 @@ terraform {
 
 ```
 
-> **Note:** Do not delete these resources unless you have migrated the state back to local storage first, or you will lose track of your EKS infrastructure!
+---
+
+### 5. Deletion procedure
+
+This foundation is designed to be permanent, but if you need to delete it, follow these rules:
+
+#### The "S3 Lock" Problem
+
+By default, S3 will not delete a bucket that is not empty. Since this bucket stores the state for your EKS cluster, it will contain files.
+
+#### Enabling Force Delete
+
+To allow Terraform to wipe the bucket even if it contains state files, ensure the following is set in `s3-bucket.tf`:
+
+```hcl
+resource "aws_s3_bucket" "terraform_state" {
+  bucket        = var.s3_bucket_name
+  force_destroy = true  # Enables deletion of non-empty buckets
+}
+
+```
+
+#### Deletion Steps
+
+1. **FIRST:** Destroy the Main Infrastructure (EKS/VPC) in the root directory.
+2. **SECOND:** Run the destroy command in this directory:
+
+```bash
+terraform destroy -auto-approve
+
+```
+
+> ** Note:** Running `terraform destroy` in this folder while the EKS cluster is still active will result in "Orphaned Infrastructure." You will lose the ability to manage or delete the EKS cluster via Terraform.
+
+```
+---

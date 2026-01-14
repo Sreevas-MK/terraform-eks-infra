@@ -43,6 +43,82 @@ terraform apply
 *Note: This process takes approximately 15~20 minutes.*
 
 ---
+
+##  CI/CD & Automation Architecture
+
+This project uses an automation model. While the foundation is laid manually, the daily lifecycle is managed via GitHub Actions.
+
+### 1. Manual Foundation (Bootstrap)
+The `00_eks-bootstrap` directory is **not** part of the automated pipeline.
+* **Logic:** It creates the S3 bucket that the CI/CD pipeline itself depends on. 
+* **Action:** You must run this once from your local server or workstation to "unlock" the cloud environment.
+
+### 2. Automated Pipelines (GitHub Actions)
+Located in `.github/workflows/`, these handle the "Main" infrastructure automatically.
+
+| Workflow | Trigger | Purpose |
+| :--- | :--- | :--- |
+| **EKS Infrastructure Pipeline** | `push` to `main` | Automatically applies changes to VPC, EKS, RDS, and Apps. |
+| **EKS Infrastructure Destroy** | `Manual Only` | Provides a safe, prompt-protected way to delete the entire stack. |
+
+> **Note on Secrets:** For GitHub Actions to function, you must add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `SSH_PUBLIC_KEY` to your GitHub Repository Secrets.
+
+---
+
+## Deletion Procedure
+
+We can destroy the infrastructure using either the automated GitHub Actions or the manual CLI method.
+
+### Option 1: Automated Deletion (GitHub Actions)
+
+This is the preferred method for the Main Infrastructure as it ensures a clean, logged teardown.
+
+1. **Main Infrastructure:**
+* Navigate to the **Actions** tab in your GitHub repository.
+* Select the **"EKS Infrastructure Destroy (MANUAL ONLY)"** workflow.
+* Click **Run workflow**, type `DESTROY` in the input field, and confirm.
+* *This removes EKS, RDS, VPC, and all associated Kubernetes resources.*
+
+
+2. **Remote State (Manual):**
+* GitHub Actions **cannot** delete the Bootstrap S3 bucket (it needs it to run). Once the Action above is finished, run this locally:
+
+```bash
+cd 00_eks-bootstrap
+terraform destroy -auto-approve
+
+```
+
+### Option 2: Manual Deletion (CLI)
+
+Use this if you are working directly from your management server. **The order is critical.**
+
+1. **Destroy Main Infrastructure First:**
+* From the project root directory:
+
+```bash
+terraform init
+terraform destroy -auto-approve
+
+```
+
+* *Note: This must be done first because the state file for this infrastructure is stored in the S3 bucket created by the bootstrap.*
+
+2. **Destroy Bootstrap Last:**
+* After the main infrastructure is completely gone:
+
+```bash
+cd 00_eks-bootstrap
+terraform destroy -auto-approve
+
+```
+
+### Important Deletion Notes
+
+* **Sequential Dependency:** Never attempt to destroy the `00_eks-bootstrap` before the Main Infrastructure. If the S3 bucket is deleted first, Terraform will "lose its memory" of the EKS cluster, leaving "zombie" resources running in your AWS account that you will have to delete manually.
+
+---
+
 ## Project Phases
 
 To deploy this infrastructure safely, follow the sequence below. Click a Phase name to jump to its detailed explanation.
@@ -268,6 +344,18 @@ This phase completes the secure foundation that connects AWS, Kubernetes, and IA
 
 </details>
 
+<details>
+<summary><b>08_eks_outputs.tf - Outputs for EKS cluster </b></summary>
+
+This file exposes key EKS details so other parts of the infrastructure can reference them.
+
+* **Cluster Name:** `eks_cluster_name` - Used for `aws eks update-kubeconfig`.
+* **API Endpoint:** `eks_cluster_endpoint` - The HTTPS URL for the Kubernetes API server.
+* **K8s Version:** `eks_cluster_version` - The version of Kubernetes currently running (e.g., 1.30).
+* **Security Group:** `eks_cluster_security_group_id` - The primary SG managing traffic to the cluster nodes.
+
+</details>
+
 ---
 
 ### Phase 5: Secure Access & Bastion Management
@@ -275,7 +363,7 @@ This phase completes the secure foundation that connects AWS, Kubernetes, and IA
 This phase sets up a **secure entry point** into the private infrastructure. The Bastion host acts as a controlled gateway for administrators to access AWS and the EKS cluster without exposing internal resources to the internet.
 
 <details>
-<summary><b>08_bastion_host_security_group.tf - Bastion Firewall Rules</b></summary>
+<summary><b>09_bastion_host_security_group.tf - Bastion Firewall Rules</b></summary>
 
 This file defines strict network rules to protect the Bastion host.
 
@@ -289,7 +377,7 @@ This file defines strict network rules to protect the Bastion host.
 </details>
 
 <details>
-<summary><b>09_iam_bastion.tf - Bastion IAM Role & Permissions</b></summary>
+<summary><b>10_iam_bastion.tf - Bastion IAM Role & Permissions</b></summary>
 
 This file creates the **AWS identity** for the Bastion host, allowing it to interact securely with EKS and other AWS services.
 
@@ -306,7 +394,7 @@ This removes the need for static AWS credentials on the server.
 </details>
 
 <details>
-<summary><b>10_bastion_host_setup.tf - Bastion EC2 Provisioning</b></summary>
+<summary><b>11_bastion_host_setup.tf - Bastion EC2 Provisioning</b></summary>
 
 This file provisions the Bastion EC2 instance and prepares it for cluster management.
 
@@ -328,7 +416,7 @@ The Bastion is fully configured on first boot, with no manual setup required.
 </details>
 
 <details>
-<summary><b>11_eks_bastion_access.tf - EKS Access Integration</b></summary>
+<summary><b>12_eks_bastion_access.tf - EKS Access Integration</b></summary>
 
 This file grants the Bastion host **explicit access** to the Kubernetes cluster.
 
@@ -364,6 +452,15 @@ The result is a ready-to-use administrative environment without manual intervent
 
 </details>
 
+<details>
+<summary><b>13_bastion_outputs.tf - Outputs for bastion host</b></summary>
+
+* **Public IP:** `bastion_public_ip` - Use this to SSH into the environment.
+* **Public DNS:** `bastion_public_dns` - The AWS-assigned hostname for the bastion.
+* **Instance ID:** `bastion_instance_id` - Useful for AWS CLI commands or checking status in the console.
+
+</details>
+
 ---
 
 ###  Phase 6: Data Layer (RDS & ElastiCache)
@@ -371,7 +468,7 @@ The result is a ready-to-use administrative environment without manual intervent
 This phase provisions the **persistent data services** used by the platform. Both the database and cache layers are fully isolated from the internet and can only be accessed by authorized internal components.
 
 <details>
-<summary><b>12_rds_eca_securitygroup.tf - Data Layer Security Groups</b></summary>
+<summary><b>14_rds_eca_securitygroup.tf - Data Layer Security Groups</b></summary>
 
 This file defines the networking "gatekeepers" for your data. It ensures that only authorized traffic can reach your databases.
 
@@ -389,7 +486,7 @@ This file defines the networking "gatekeepers" for your data. It ensures that on
 </details>
 
 <details>
-<summary><b>13_rds.tf - Managed MySQL Database (RDS)</b></summary>
+<summary><b>15_rds.tf - Managed MySQL Database (RDS)</b></summary>
 
 This file provisions the managed MySQL database.
 
@@ -413,7 +510,16 @@ This file provisions the managed MySQL database.
 </details>
 
 <details>
-<summary><b>14_eca.tf - ElastiCache Valkey Cluster</b></summary>
+<summary><b>16_rds_outputs.tf - Outputs for Managed MySQL Database (RDS)</b></summary>
+
+* **RDS Endpoint:** `rds_endpoint` - The hostname your application uses to connect to MySQL.
+* **RDS Port:** `rds_port` - Defaults to `3306`.
+* **Identifier:** `rds_identifier` - The unique name of the RDS instance in the AWS console.
+
+</details>
+
+<details>
+<summary><b>17_eca.tf - ElastiCache Valkey Cluster</b></summary>
 
 This file provisions the Valkey (Redis-compatible) caching layer.
 
@@ -434,6 +540,14 @@ This file provisions the Valkey (Redis-compatible) caching layer.
 
 </details>
 
+<details>
+<summary><b>18_eca_outputs.tf - Outputs for ElastiCache Valkey Cluster</b></summary>
+
+* **Configuration Endpoint:** `valkey_configuration_endpoint` - The cluster-level endpoint for your Valkey (Redis-compatible) cache.
+* **Valkey Port:** `valkey_port` - Typically `6379`.
+
+</details>
+
 ---
 
 ### Phase 7: External Secrets Operator (ESO) & IAM Security
@@ -441,7 +555,7 @@ This file provisions the Valkey (Redis-compatible) caching layer.
 This phase solves a critical security problem: **getting database credentials into Kubernetes without humans ever seeing or handling passwords**. AWS generates the secrets, and Kubernetes consumes them automatically using IAM-based trust.
 
 <details>
-<summary><b>15_eso_iam.tf - IAM Role for External Secrets Operator</b></summary>
+<summary><b>19_eso_iam.tf - IAM Role for External Secrets Operator</b></summary>
 
 * **module "external_secrets_irsa"**:
   * `source`: Uses the official IAM module for EKS Service Accounts.
@@ -460,7 +574,7 @@ This phase solves a critical security problem: **getting database credentials in
 </details>
 
 <details>
-<summary><b>16_eso_helm.tf - External Secrets Operator Installation</b></summary>
+<summary><b>20_eso_helm.tf - External Secrets Operator Installation</b></summary>
 
 This file installs the External Secrets Operator into the cluster and configures how it connects to AWS.
 
@@ -502,7 +616,7 @@ This phase builds a professional-grade monitoring and logging pipeline. Instead 
 
 
 <details>
-<summary><b>17_monitoring_s3.tf - S3 Storage & IAM for Loki</b></summary>
+<summary><b>21_monitoring_s3.tf - S3 Storage & IAM for Loki</b></summary>
 
 This file creates the "Hard Drive" in the cloud where Loki will store its data.
 
@@ -524,7 +638,7 @@ This file creates the "Hard Drive" in the cloud where Loki will store its data.
 </details>
 
 <details>
-<summary><b>18_monitoring_helm.tf - Monitoring Stack Deployment</b></summary>
+<summary><b>22_monitoring_helm.tf - Monitoring Stack Deployment</b></summary>
 
 This file handles the deployment and complex logic of the monitoring software.
 
@@ -541,7 +655,7 @@ This file handles the deployment and complex logic of the monitoring software.
 </details>
 
 <details>
-<summary><b>19_grafana_ingress.tf - Public Access via ALB</b></summary>
+<summary><b>23_grafana_ingress.tf - Public Access via ALB</b></summary>
 
 This file makes Grafana accessible via the internet through an AWS Application Load Balancer.
 
@@ -611,7 +725,7 @@ This file configures Grafana so it knows where to find data.
 This phase sets up **ArgoCD**, the tool that automates your deployments from Git into Kubernetes. Instead of manually applying YAMLs or Helm charts every time you update your app, ArgoCD constantly monitors your Git repository and makes sure the cluster matches exactly what's declared in Git.  
 
 <details>
-<summary><b>20_argocd.tf - ArgoCD installation</b></summary>
+<summary><b>24_argocd.tf - ArgoCD installation</b></summary>
 
 This file installs the ArgoCD engine itself.
 
@@ -629,7 +743,7 @@ This file installs the ArgoCD engine itself.
 </details>
 
 <details>
-<summary><b>21_argocd_application.tf - ArgoCD application deployment</b></summary>
+<summary><b>25_argocd_application.tf - ArgoCD application deployment</b></summary>
 
 It connects the infrastructure you built (RDS, Valkey) to your application code.
 
@@ -657,7 +771,7 @@ It connects the infrastructure you built (RDS, Valkey) to your application code.
 </details>
 
 <details>
-<summary><b>22_argocd_ingress.tf - Exposing ArgoCD UI via AWS ALB</b></summary>
+<summary><b>26_argocd_ingress.tf - Exposing ArgoCD UI via AWS ALB</b></summary>
 
 This file exposes the ArgoCD UI to you so you can monitor your deployments in a browser.
 
