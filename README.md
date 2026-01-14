@@ -283,6 +283,24 @@ This phase builds the **Kubernetes control plane**, worker nodes, and the **IAM 
 
 This file manages SSH access for troubleshooting and maintenance on the Bastion host and EKS worker nodes.
 
+Before running Terraform, you must have a public key available.
+
+* **Generate a key locally:**
+
+If you don't have a key, run the following command in your terminal:
+```bash
+ssh-keygen -t rsa -b 4096 -f ./files/eks-key
+
+```
+
+While this project uses the name `eks-key.pub` by default, you can name your file anything. If you change the name, ensure you update the `public_key` path in `06_key_pair.tf` and the reference in `11_bastion_host_setup.tf`.
+
+* **Local Execution:** Place your `.pub` file directly into the `./files` directory. Terraform will read it using the `file()` function during the plan phase.
+* **GitHub Actions (CI/CD):** You do **not** need to commit your key to Git. Instead:
+  1. Copy the contents of your `.pub` file.
+  2. Add it as a GitHub Secret named `SSH_PUBLIC_KEY`.
+  3. The workflow is pre-configured to automatically recreate the file at `./files/eks-key.pub` on the GitHub runner before running Terraform.
+
 * **SSH Key Setup**
   * `key_name`: The logical name used by AWS to reference the SSH key.
   * `public_key`: Reads the public key from `./files/eks-key.pub` using the `file()` function.
@@ -945,8 +963,8 @@ Terraform failed during EKS node group and IRSA creation due to unresolved impli
 
 **Solution:**  
 Explicit `depends_on` relationships were added between:
-- EKS cluster → node groups  
-- IAM roles → IRSA modules  
+- EKS cluster - node groups  
+- IAM roles - IRSA modules  
 
 Terraform does not always infer execution order correctly in complex infrastructures. Explicit dependency control is critical.
 </details>
@@ -1045,17 +1063,17 @@ Hidden Dependencies: Cloud-provider-specific resources (like ALBs) created by Ku
 
 To automate the fix and avoid manual intervention, the Terraform configuration was updated to enforce a strict destruction order using depends_on blocks:
 
-    Ingress Priority: Modified kubernetes_ingress_v1 resources to explicitly depend on the module.eks.eks_managed_node_groups and module.eks_blueprints_addons.
+Ingress Priority: Modified kubernetes_ingress_v1 resources to explicitly depend on the module.eks.eks_managed_node_groups and module.eks_blueprints_addons.
 
-    Destruction Flow: This forces Terraform to:
+Destruction Flow: This forces Terraform to:
 
-        Delete the Ingress first (while the controller and nodes are still running).
+- Delete the Ingress first (while the controller and nodes are still running).
 
-        Wait for the ALB to be removed by the controller.
+- Wait for the ALB to be removed by the controller.
 
-        Delete the Nodes only after the ALB is gone.
+- Delete the Nodes only after the ALB is gone.
 
-        Delete the VPC last.
+- Delete the VPC last.
 
 </details>
 
