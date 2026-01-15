@@ -2,10 +2,6 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
 
-  depends_on = [
-    null_resource.destruction_dependencies
-  ]
-
   name               = "${var.project_name}-cluster"
   kubernetes_version = "1.33"
   enable_irsa        = true
@@ -131,8 +127,7 @@ module "eks_blueprints_addons" {
   version = "~> 1.23.0"
 
   depends_on = [
-    module.eks.eks_managed_node_groups,
-    null_resource.destruction_dependencies
+    module.eks.eks_managed_node_groups
   ]
 
   eks_addons = {
