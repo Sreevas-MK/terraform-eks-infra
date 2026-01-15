@@ -1054,32 +1054,45 @@ Design must consider cost efficiency, not just functionality.
 <summary><b>Terraform Destroy Failures (Ingress & ALB Dependencies)</b></summary>
 
 **Issue:**
-`terraform destroy` hung or failed due to ALB dependencies created by:
-
-* Grafana Ingress
-* ArgoCD Ingress
+During `terraform destroy`, the deletion of the EKS cluster, Node Groups, and VPC sometimes failed or hung. The root cause was related to Kubernetes-managed resources like Ingresses (Grafana, ArgoCD) that create AWS ALBs via the AWS Load Balancer Controller.
 
 **Root Cause:**
-AWS ALB could not be deleted while Kubernetes ingress resources still existed.
-Orphaned Resources: The EKS Cluster and Node Groups were being destroyed before the Ingress resources.
 
-Controller Termination: When the Node Groups were deleted first, the aws-load-balancer-controller pod died. Without the controller, there was no process to send the "Delete ALB" command to AWS when the Ingress resource was finally reached in the destroy sequence.
+1. **Hidden Dependencies:**
+   Kubernetes controllers (e.g., aws-load-balancer-controller) create cloud resources (ALBs) automatically. Terraform does **not track these ALBs**, so it doesn’t know to wait for them before deleting the cluster or node groups.
 
-Hidden Dependencies: Cloud-provider-specific resources (like ALBs) created by Kubernetes controllers are not natively tracked in the Terraform state file, creating a "hidden" reverse dependency.
+2. **Controller Termination Issue:**
+   If Terraform deletes Node Groups or the EKS cluster **before the Ingress resources**, the aws-load-balancer-controller pods stop running. Without the controller, the Ingress deletion cannot trigger the AWS ALB deletion, leaving resources orphaned and causing Terraform destroy to fail.
 
-To automate the fix and avoid manual intervention, the Terraform configuration was updated to enforce a strict destruction order using depends_on blocks:
+3. **Timing Dependencies:**
+   Some resources (like ArgoCD apps and Helm releases) may take time to fully terminate. Immediate destruction of the underlying namespaces or cluster can interrupt cleanup.
 
-Ingress Priority: Modified kubernetes_ingress_v1 resources to explicitly depend on the module.eks.eks_managed_node_groups and module.eks_blueprints_addons.
+**Solution Implemented:**
 
-Destruction Flow: This forces Terraform to:
+1. **Namespace & Ingress Deletion Order:**
 
-- Delete the Ingress first (while the controller and nodes are still running).
+   * Added `depends_on` in Kubernetes namespaces and Ingress resources to ensure they are destroyed **before** Node Groups or cluster.
+   * Ensures the controller is still running when Ingress deletion is processed.
 
-- Wait for the ALB to be removed by the controller.
+2. **Destruction Buffer:**
 
-- Delete the Nodes only after the ALB is gone.
+   * Introduced a `null_resource` with a `local-exec` `sleep 60` during destroy.
+   * This gives controllers and Kubernetes enough time to remove all ALBs, Services, and other cloud resources before Terraform proceeds with destroying core infrastructure.
 
-- Delete the VPC last.
+3. **Data Source Anchors:**
+
+   * Added `aws_vpc` and `aws_eks_cluster` **data sources** with `depends_on = [null_resource.destruction_dependencies]`.
+   * Ensures Terraform waits for the destruction buffer before deleting the VPC or EKS cluster.
+
+**Resulting Flow:**
+
+| Phase   | Order                                                                                     |
+| ------- | ----------------------------------------------------------------------------------------- |
+| Create  | EKS → Node Groups → Namespaces → Helm → Apps → Ingress → ALB                              |
+| Destroy | Apps → Helm → Namespaces → `null_resource` sleep → Data anchors → Node Groups → EKS → VPC |
+
+**Impact:**
+This ensures deterministic, failure-free Terraform destroys, even when cloud-managed resources are asynchronously cleaned up by Kubernetes controllers.
 
 </details>
 
