@@ -788,6 +788,19 @@ It connects the infrastructure you built (RDS, Valkey) to your application code.
   * `flask.env.REDIS_HOST`: Injects the Valkey endpoint. The `split` function is used to remove the port number from the URL string.
   * `flask.secrets.remoteRef.key`: Passes the **AWS Secrets Manager ARN**. The External Secrets Operator (Phase 6) will use this to grab the DB password.
 
+<p align="center">
+  <img src="./images/RDS.png" alt="RDS end-point" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/ECA.png" alt="Elastic-cache valkey-cache" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/Secrets_manager.png" alt="Secrets manager - RDS secrets" width="800">
+</p>
+
+
 * **`syncPolicy`**:
   * `automated.prune`: If you delete a resource from Git, ArgoCD will automatically delete it from K8s.
   * `automated.selfHeal`: If someone manually changes something in K8s, ArgoCD will overwrite it back to the Git state.
@@ -907,35 +920,61 @@ Validate ingress routing, DNS, and AWS Application Load Balancer configuration.
 * Confirm ingress rules are functioning correctly
 
 <p align="center">
-  <img src="./images/Load_balancer_1.png" alt="Load Balancer" width="750">
+  <img src="./images/Load_balancer_1.png" alt="Load Balancer" width="800">
 </p>
 
 <p align="center">
-  <img src="./images/Listeners_and_rules.png" alt="Listeners and rules" width="750">
+  <img src="./images/Listeners_and_rules.png" alt="Listeners and rules" width="800">
 </p>
 
 <p align="center">
-  <img src="./images/Network_mapping.png" alt="Network Mapping" width="750">
+  <img src="./images/Network_mapping.png" alt="Network Mapping" width="800">
 </p>
 
 <p align="center">
-  <img src="./images/Targets.png" alt="Targets" width="750">
+  <img src="./images/Targets.png" alt="Targets" width="800">
 </p>
 
 
-We can use the following commands to find Grafana & ArgoCD admin password (Inside Bastion host)
+We can use the following command to find ArgoCD admin password (Inside Bastion host)
 ```bash
-kubectl get secrets monitoring-stack-grafana -o jsonpath="{.data.admin-password}" -n monitoring | base64 -d ; echo
-
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
 <p align="center">
-  <img src="./images/Argocd1.png" alt="ArgoCD admin login" width="750">
+  <img src="./images/Argocd1.png" alt="ArgoCD admin login" width="800">
 </p>
 
 <p align="center">
-  <img src="./images/Argocd2.png" alt="Argocd Dashboard" width="750">
+  <img src="./images/Argocd2.png" alt="Argocd Dashboard" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/Argocd3.png" alt="Argocd application" width="800">
+</p>
+
+We can use the following command to find Grafana admin password
+```bash
+kubectl get secrets monitoring-stack-grafana -o jsonpath="{.data.admin-password}" -n monitoring | base64 -d ; echo
+```
+<p align="center">
+  <img src="./images/Grafana1.png" alt="Grafana admin login" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/Grafana2.png" alt="Grafana Datasources" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/Grafana3.png" alt="Grafana log access - Loki" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/Grafana4.png" alt="Grafana log access - Loki" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/Grafana5.png" alt="Grafana log access - Prometheus" width="800">
 </p>
 
 
@@ -951,7 +990,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 Validate application connectivity to Amazon RDS MySQL and confirm database write operations.
 
 <p align="center">
-  <img src="./images/App-1.png" alt="Application front-end before edits" width="750">
+  <img src="./images/App-1.png" alt="Application front-end before edits" width="800">
 </p>
 
 **Actions Performed:**
@@ -971,6 +1010,10 @@ mysql -h <db_instance_address> \
 ```
 Where <db_instance_address> is RDS instance address. (Example: eks-infra-mysql.cf68siug04ay.ap-south-1.rds.amazonaws.com )
 
+<p align="center">
+  <img src="./images/RDS.png" alt="RDS end-point" width="800">
+</p>
+
 **SQL Operations:**
 
 Select the database
@@ -987,7 +1030,7 @@ INSERT INTO employees (id,name,age,email) VALUES
 (103,"Emily",30,"emily@gmail.com");
 ```
 <p align="center">
-  <img src="./images/APP-2.png" alt="Application front-end after edits" width="750">
+  <img src="./images/APP-2.png" alt="Application front-end after edits" width="800">
 </p>
 
 **Video Link:**
