@@ -903,8 +903,15 @@ Validate ingress routing, DNS, and AWS Application Load Balancer configuration.
 **Actions Performed:**
 
 * Inspect ALB configuration in AWS Console
-* Verify HTTPS routing for all exposed services
+* Verify HTTPS routing for all exposed services ( ArgoCD, Grafana, and Application)
 * Confirm ingress rules are functioning correctly
+
+We can use the following commands to find Grafana & ArgoCD admin password (Inside Bastion host)
+```bash
+kubectl get secrets monitoring-stack-grafana -o jsonpath="{.data.admin-password}" -n monitoring | base64 -d ; echo
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
 
 **Video Link:**
 [https://youtu.be/fLqPJPAIo0E](https://youtu.be/fLqPJPAIo0E)
@@ -932,9 +939,16 @@ kubectl run mysql-client --rm -it --image=mysql:8.0 -- /bin/bash
 mysql -h <db_instance_address> \
   -P 3306 -u appadmin -p
 ```
+Where <db_instance_address> is RDS instance address. (Example: eks-infra-mysql.cf68siug04ay.ap-south-1.rds.amazonaws.com )
 
 **SQL Operations:**
 
+Select the database
+```sql
+use company;
+```
+
+Insert values into 'employees' table
 ```sql
 INSERT INTO employees (id,name,age,email) VALUES
 (100,"Alex",25,"alex@gmail.com"),
