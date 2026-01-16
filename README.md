@@ -907,13 +907,19 @@ Validate ingress routing, DNS, and AWS Application Load Balancer configuration.
 * Confirm ingress rules are functioning correctly
 
 <p align="center">
-  <img src="./images/Load_balancer_1.png" alt="Load Balancer" width="300">
-  <img src="./images/Listeners_and_rules.png" alt="Listeners and rules" width="300">
+  <img src="./images/Load_balancer_1.png" alt="Load Balancer" width="750">
 </p>
 
 <p align="center">
-  <img src="./images/Network_mapping.png" alt="Network Mapping" width="300">
-  <img src="./images/Targets.png" alt="Targets" width="300">
+  <img src="./images/Listeners_and_rules.png" alt="Listeners and rules" width="750">
+</p>
+
+<p align="center">
+  <img src="./images/Network_mapping.png" alt="Network Mapping" width="750">
+</p>
+
+<p align="center">
+  <img src="./images/Targets.png" alt="Targets" width="750">
 </p>
 
 
@@ -925,8 +931,11 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 ```
 
 <p align="center">
-  <img src="./images/Argocd1.png" alt="ArgoCD admin login" width="300">
-  <img src="./images/Argocd2.png" alt="Argocd Dashboard" width="300">
+  <img src="./images/Argocd1.png" alt="ArgoCD admin login" width="750">
+</p>
+
+<p align="center">
+  <img src="./images/Argocd2.png" alt="Argocd Dashboard" width="750">
 </p>
 
 
@@ -942,7 +951,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 Validate application connectivity to Amazon RDS MySQL and confirm database write operations.
 
 <p align="center">
-  <img src="./images/App-1.png" alt="Application front-end before edits" width="350">
+  <img src="./images/App-1.png" alt="Application front-end before edits" width="750">
 </p>
 
 **Actions Performed:**
@@ -978,7 +987,7 @@ INSERT INTO employees (id,name,age,email) VALUES
 (103,"Emily",30,"emily@gmail.com");
 ```
 <p align="center">
-  <img src="./images/APP-2.png" alt="Application front-end after edits" width="350">
+  <img src="./images/APP-2.png" alt="Application front-end after edits" width="750">
 </p>
 
 **Video Link:**
