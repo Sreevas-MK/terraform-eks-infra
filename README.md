@@ -134,7 +134,7 @@ To deploy this infrastructure safely, follow the sequence below. Click a Phase n
 | [Phase 7](#phase-7-external-secrets-operator-eso--iam-security) | **Security** | ESO & Secrets Manager | Automate secure credential injection into K8s pods. |
 | [Phase 8](#phase-8-full-stack-observability-loki-prometheus--grafana) | **Observability** | PLG Stack | Centralized logging (S3) and metric dashboards ( Prometheus, Loki, & Grafana) |
 | [Phase 9](#phase-9-argocd--automated-gitops) | **Continuous Delivery** | ArgoCD | Sync GitHub repositories directly to the cluster. |
-| [Phase 10](#phase-10-destruction-anchors-cleanup-sync) | **Cleanup & Teardown Safety** | Terraform Destroy Anchors | Enforce safe deletion order and prevent stuck ALB / EKS resources. |
+| [Phase 10](#phase-10-destruction-anchors--cleanup-sync) | **Cleanup & Teardown Safety** | Terraform Destroy Anchors | Enforce safe deletion order and prevent stuck ALB / EKS resources. |
 
 ---
 
