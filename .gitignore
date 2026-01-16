@@ -4,3 +4,5 @@ eks-key
 .terraform
 .terraform.lock.hcl
 *.pub
+*.swp
+*.swo
