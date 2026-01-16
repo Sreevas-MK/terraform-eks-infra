@@ -916,7 +916,7 @@ This validates the end-to-end integration between EKS, the AWS Load Balancer Con
     <th align="center">Application</th>
     <th align="center">A Record</th>
     <th align="center">TXT Record</th>
-    <th align="center">CNAME Record</th>
+    <th align="center">TXT Record</th>
   </tr>
 
   <tr>
