@@ -4,6 +4,15 @@ This repository contains a full-stack Infrastructure-as-Code (IaC) deployment fo
 
 ---
 
+## Table of Contents
+
+- [Deployment Guide](#deployment-guide)
+- [CI/CD & Automation Architecture](#cicd--automation-architecture)
+- [Deletion Procedure](#deletion-procedure)
+- [Project Phases](#project-phases)
+- [Project Demo & Validation Videos](#project-demo--validation-videos)
+- [Challenges & Learnings](#challenges--learnings)
+
 ## Deployment Guide
 
 ### Step 1: Remote State Bootstrap
