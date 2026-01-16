@@ -793,7 +793,7 @@ It connects the infrastructure you built (RDS, Valkey) to your application code.
 </p>
 
 <p align="center">
-  <img src="./images/ECA.png" alt="Elastic-cache valkey-cache" width="800">
+  <img src="./images/Elastic_cache.png" alt="Elastic-cache valkey-cache" width="800">
 </p>
 
 <p align="center">
@@ -870,8 +870,39 @@ When running your manual destroy, you will see the `null_resource` status as **"
 
 ## Project Demo & Validation Videos
 
-This section contains a series of recorded demo videos showcasing end-to-end validation of the EKS platform.
-The videos demonstrate cluster health checks, ingress and load balancer verification, application functionality with database operations, and data persistence across application restarts.
+This section contains a series of recorded demo photos/videos showcasing validation of the EKS platform.
+The section shows terraform execution via github-actions, cluster health checks, ingress and load balancer verification, application functionality with database operations, and data persistence across application restarts.
+
+<details>
+<summary><b>Infrastructure Pipeline Execution & Terraform Outputs Validation</b></summary>
+
+The images below capture a successful run of the GitHub Actions pipeline, confirming that the CI/CD workflow executed as expected.
+
+<p align="center">
+  <img src="./images/Github-actions-1.png" alt="Github actions 1" width="800">
+</p>
+
+<p align="center">
+  <img src="./images/Github-actions-2.png" alt="Github actions 2" width="800">
+</p>
+
+
+These outputs shows that core infrastructure components such as the EKS cluster, Bastion host, database, and cache layers were provisioned correctly and are accessible for operations and troubleshooting.
+
+<p align="center">
+  <img src="./images/Terraform_outputs.png" alt="Terraform Outputs" width="800">
+</p>
+
+**What is validated:**
+* EKS cluster name and API endpoint
+* Bastion host public IP and DNS
+* RDS MySQL endpoint and port
+* ElastiCache (Valkey) configuration endpoint
+
+Terraform outputs act as the final infrastructure-level verification before application and GitOps validation.
+
+</details>
+
 
 <details>
 <summary><b>Initial Node & Cluster Checks (Bastion Host)</b></summary>
@@ -990,7 +1021,7 @@ kubectl get secrets monitoring-stack-grafana -o jsonpath="{.data.admin-password}
 Validate application connectivity to Amazon RDS MySQL and confirm database write operations.
 
 <p align="center">
-  <img src="./images/App-1.png" alt="Application front-end before edits" width="800">
+  <img src="./images/APP-1.png" alt="Application front-end before edits" width="800">
 </p>
 
 **Actions Performed:**
