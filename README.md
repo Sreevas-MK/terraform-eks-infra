@@ -911,23 +911,53 @@ The images below demonstrate the successful operation of **ExternalDNS**, confir
 
 This validates the end-to-end integration between EKS, the AWS Load Balancer Controller, and Route 53 without any manual DNS configuration.
 
-<p align="center">
-  <img src="./images/app.sreevasmk.in.png" alt="app.sreevasmk.in A record" width="250">
-  <img src="./images/app.sreevasmk.in-txt.png" alt="app.sreevasmk.in TXT record" width="250">
-  <img src="./images/app.sreevasmk.in-cname.png" alt="app.sreevasmk.in CNAME record" width="250">
-</p>
+<table align="center">
+  <tr>
+    <th align="center">Application</th>
+    <th align="center">A Record</th>
+    <th align="center">TXT Record</th>
+    <th align="center">CNAME Record</th>
+  </tr>
 
-<p align="center">
-  <img src="./images/argocd.sreevasmk.in.png" alt="argocd.sreevasmk.in A record" width="250">
-  <img src="./images/argocd.sreevasmk.in-txt.png" alt="argocd.sreevasmk.in TXT record" width="250">
-  <img src="./images/argocd.sreevasmk.in-cname.png" alt="argocd.sreevasmk.in CNAME record" width="250">
-</p>
+  <tr>
+    <td align="center"><b>Application</b><br>app.sreevasmk.in</td>
+    <td align="center">
+      <img src="./images/app.sreevasmk.in.png" width="220">
+    </td>
+    <td align="center">
+      <img src="./images/app.sreevasmk.in-txt.png" width="220">
+    </td>
+    <td align="center">
+      <img src="./images/app.sreevasmk.in-cname.png" width="220">
+    </td>
+  </tr>
 
-<p align="center">
-  <img src="./images/grafana.sreevasmk.in.png" alt="grafana.sreevasmk.in A record" width="250">
-  <img src="./images/grafana.sreevasmk.in-txt.png" alt="grafana.sreevasmk.in TXT record" width="250">
-  <img src="./images/grafana.sreevasmk.in-cname.png" alt="grafana.sreevasmk.in CNAME record" width="250">
-</p>
+  <tr>
+    <td align="center"><b>ArgoCD</b><br>argocd.sreevasmk.in</td>
+    <td align="center">
+      <img src="./images/argocd.sreevasmk.in.png" width="220">
+    </td>
+    <td align="center">
+      <img src="./images/argocd.sreevasmk.in-txt.png" width="220">
+    </td>
+    <td align="center">
+      <img src="./images/argocd.sreevasmk.in-cname.png" width="220">
+    </td>
+  </tr>
+
+  <tr>
+    <td align="center"><b>Grafana</b><br>grafana.sreevasmk.in</td>
+    <td align="center">
+      <img src="./images/grafana.sreevasmk.in.png" width="220">
+    </td>
+    <td align="center">
+      <img src="./images/grafana.sreevasmk.in-txt.png" width="220">
+    </td>
+    <td align="center">
+      <img src="./images/grafana.sreevasmk.in-cname.png" width="220">
+    </td>
+  </tr>
+</table>
 
 **What is validated:**
 * Automatic DNS record creation for application, ArgoCD, and Grafana services
