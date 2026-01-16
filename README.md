@@ -134,7 +134,7 @@ To deploy this infrastructure safely, follow the sequence below. Click a Phase n
 | [Phase 7](#phase-7-external-secrets-operator-eso--iam-security) | **Security** | ESO & Secrets Manager | Automate secure credential injection into K8s pods. |
 | [Phase 8](#phase-8-full-stack-observability-loki-prometheus--grafana) | **Observability** | PLG Stack | Centralized logging (S3) and metric dashboards ( Prometheus, Loki, & Grafana) |
 | [Phase 9](#phase-9-argocd--automated-gitops) | **Continuous Delivery** | ArgoCD | Sync GitHub repositories directly to the cluster. |
-| [Phase 10](#phase-10-safe-destruction--dependency-anchoring)          | **Cleanup & Teardown Safety** | Terraform Destroy Anchors | Enforce safe deletion order and prevent stuck ALB / EKS resources. |
+| [Phase 10](#phase-10-destruction-anchors-cleanup-sync) | **Cleanup & Teardown Safety** | Terraform Destroy Anchors | Enforce safe deletion order and prevent stuck ALB / EKS resources. |
 
 ---
 
@@ -890,7 +890,7 @@ The images below capture a successful run of the GitHub Actions pipeline, confir
 These outputs shows that core infrastructure components such as the EKS cluster, Bastion host, database, and cache layers were provisioned correctly and are accessible for operations and troubleshooting.
 
 <p align="center">
-  <img src="./images/Terraform_outputs.png" alt="Terraform Outputs" width="800">
+  <img src="./images/Terraform_outputs.png" alt="Terraform Outputs" width="500">
 </p>
 
 **What is validated:**
@@ -1187,7 +1187,7 @@ This ensures that all provisioned resources are properly cleaned up and no orpha
 **Destroy Result:**
 
 <p align="center">
-  <img src="./images/Destroy-Output.png" alt="Terraform destroy output" width="800">
+  <img src="./images/Destroy-Output.png" alt="Terraform destroy output" width="500">
 </p>
 
 **Result:**
