@@ -108,5 +108,3 @@ terraform destroy -auto-approve
 ```
 
 > ** Note:** Running `terraform destroy` in this folder while the EKS cluster is still active will result in "Orphaned Infrastructure." You will lose the ability to manage or delete the EKS cluster via Terraform.
-
-```
