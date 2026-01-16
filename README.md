@@ -905,6 +905,42 @@ Terraform outputs act as the final infrastructure-level verification before appl
 
 
 <details>
+<summary><b>ExternalDNS & Route 53 Records Validation</b></summary>
+
+The images below demonstrate the successful operation of **ExternalDNS**, confirming that DNS records were automatically created and managed in Amazon Route 53 based on Kubernetes Ingress resources.
+
+This validates the end-to-end integration between EKS, the AWS Load Balancer Controller, and Route 53 without any manual DNS configuration.
+
+<p align="center">
+  <img src="./images/app.sreevasmk.in.png" alt="app.sreevasmk.in A record" width="250">
+  <img src="./images/app.sreevasmk.in-txt.png" alt="app.sreevasmk.in TXT record" width="250">
+  <img src="./images/app.sreevasmk.in-cname.png" alt="app.sreevasmk.in CNAME record" width="250">
+</p>
+
+<p align="center">
+  <img src="./images/argocd.sreevasmk.in.png" alt="argocd.sreevasmk.in A record" width="250">
+  <img src="./images/argocd.sreevasmk.in-txt.png" alt="argocd.sreevasmk.in TXT record" width="250">
+  <img src="./images/argocd.sreevasmk.in-cname.png" alt="argocd.sreevasmk.in CNAME record" width="250">
+</p>
+
+<p align="center">
+  <img src="./images/grafana.sreevasmk.in.png" alt="grafana.sreevasmk.in A record" width="250">
+  <img src="./images/grafana.sreevasmk.in-txt.png" alt="grafana.sreevasmk.in TXT record" width="250">
+  <img src="./images/grafana.sreevasmk.in-cname.png" alt="grafana.sreevasmk.in CNAME record" width="250">
+</p>
+
+**What is validated:**
+* Automatic DNS record creation for application, ArgoCD, and Grafana services
+* Correct mapping of ALB endpoints to public domain names
+* Presence of ownership **TXT records** used by ExternalDNS
+* No manual Route 53 configuration required
+
+These records confirm that Kubernetes Ingress resources are correctly synchronized with Route 53, enabling public access to services through stable and human-readable domain names.
+
+</details>
+
+
+<details>
 <summary><b>Initial Node & Cluster Checks (Bastion Host)</b></summary>
 
 **Purpose:**
