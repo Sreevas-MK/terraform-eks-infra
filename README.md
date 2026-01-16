@@ -134,6 +134,7 @@ To deploy this infrastructure safely, follow the sequence below. Click a Phase n
 | [Phase 7](#phase-7-external-secrets-operator-eso--iam-security) | **Security** | ESO & Secrets Manager | Automate secure credential injection into K8s pods. |
 | [Phase 8](#phase-8-full-stack-observability-loki-prometheus--grafana) | **Observability** | PLG Stack | Centralized logging (S3) and metric dashboards ( Prometheus, Loki, & Grafana) |
 | [Phase 9](#phase-9-argocd--automated-gitops) | **Continuous Delivery** | ArgoCD | Sync GitHub repositories directly to the cluster. |
+| [Phase 10](#phase-10-safe-destruction--dependency-anchoring)          | **Cleanup & Teardown Safety** | Terraform Destroy Anchors | Enforce safe deletion order and prevent stuck ALB / EKS resources. |
 
 ---
 
@@ -810,6 +811,47 @@ This file exposes the ArgoCD UI to you so you can monitor your deployments in a 
   * `backend.service.port.number = 443`: Forwards the traffic to ArgoCD's secure internal port.
 
 </details>
+
+---
+
+### Phase 10: Destruction Anchors & Cleanup Sync
+
+This phase manages the "Invisible Dependencies." In EKS, certain resources (like Ingresses) create AWS Application Load Balancers (ALBs) that Terraform doesn't directly track. This phase ensures these external resources are cleaned up before the network is destroyed.
+
+<details>
+<summary><b>27_cleanup_sync.tf - The Destruction Buffer</b></summary>
+
+This file handles the timing of the "Teardown" process.
+
+* **resource "null_resource" "destruction_dependencies"**
+* **The Trigger**: This resource acts as a gatekeeper. It "depends on" every single high-level Kubernetes resource (Helm charts, Ingresses, Namespaces, and ArgoCD apps).
+* **Creation**: During `apply`, it does nothing.
+* **Destruction**: During `destroy`, it is the **first** thing to trigger because everything else depends on it.
+* **local-exec (sleep 60)**: It runs a 60-second sleep command. This provides a "buffer window" for the AWS Load Balancer Controller to communicate with the AWS API and physically delete the ALBs/Target Groups while the EKS worker nodes are still active.
+
+</details>
+
+<details>
+<summary><b>28_destruction_anchors.tf - Infrastructure Locking</b></summary>
+
+This file creates a "Hard Link" between the Kubernetes apps and the AWS Network.
+
+* **data "aws_vpc" "destruction_anchor"** & **data "aws_eks_cluster" "destruction_anchor"**
+* **The Lock**: These data sources are forced to depend on the `null_resource` (the 60-second sleep).
+* **The Result**: Terraform is physically unable to delete the VPC or the EKS Cluster until these data sources are "cleared."
+* **The Flow**:
+1. Terraform starts the destroy.
+2. It deletes the Namespaces and Apps.
+3. It hits the `null_resource` and waits 60 seconds (ALBs delete in background).
+4. The "Anchors" are released.
+5. Terraform finally proceeds to delete the Node Groups, EKS Cluster, and VPC.
+
+
+This ensures a deterministic, failure-free cleanup without leaving "zombie" resources behind.
+
+</details>
+
+When running your manual destroy, you will see the `null_resource` status as **"Destroying..."** for exactly 60 seconds. This is normal and expected; it prevents resources from a hung deletion.
 
 ---
 
