@@ -52,7 +52,7 @@ This project is split into multiple repositories. Each repository has a clear re
 * Images are built and pushed to Docker Hub via CI/CD.
 
 🔗 Application Repository:  
-`https://github.com/Sreevas-MK/flask-redis-mysql-cloud-stack.git`
+`https://github.com/Sreevas-MK/employees-data-app.git`
 
 ---
 
