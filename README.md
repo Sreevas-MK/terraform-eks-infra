@@ -1421,6 +1421,8 @@ This ensures deterministic, failure-free Terraform destroys, even when cloud-man
 </details>
 
 ---
-This project demonstrates a full-stack EKS deployment managed entirely via Terraform and GitOps (ArgoCD). It incorporates observability, persistent storage, and caching while handling complex cloud dependencies automatically.
+This project demonstrates a full-stack EKS deployment managed entirely via Terraform and GitOps (ArgoCD). It incorporates observability, persistent storage, and caching while handling complex cloud dependencies automatically. 
+
 Overall, it provides a practical template for scalable, maintainable Kubernetes environments and serves as a reference for managing real-world EKS projects.
+
 ---
