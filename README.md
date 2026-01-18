@@ -12,12 +12,49 @@ This repository contains a full-stack Infrastructure-as-Code (IaC) deployment fo
 
 ## Table of Contents
 
+- [Repository Structure & Responsibilities](#repository-structure--responsibilities)
 - [Deployment Guide](#deployment-guide)
 - [CI/CD & Automation Architecture](#cicd--automation-architecture)
 - [Deletion Procedure](#deletion-procedure)
 - [Project Phases](#project-phases)
 - [Project Demo & Validation Videos](#project-demo--validation-videos)
 - [Challenges & Learnings](#challenges--learnings)
+
+
+## Repository Structure & Responsibilities
+
+This project is split into multiple repositories. Each repository has a clear responsibility.
+
+### 1. EKS Infrastructure Repository (This Repo)
+* Provisions AWS infrastructure using Terraform.
+* Creates VPC, EKS cluster, node groups, IAM roles, ALB controller, External Secrets Operator, and monitoring stack.
+* Deploys Helm charts using Terraform `helm_release` or GitOps workflows.
+* Acts as the **control plane** for the entire platform.
+
+### 2. Application Helm Chart Repository
+* Contains Helm charts for Kubernetes application deployment.
+* Defines Kubernetes resources such as:
+  * Namespace
+  * Deployment
+  * Service
+  * HPA
+  * Ingress (ALB)
+  * External Secrets
+  * Network Policies
+* Consumed by this EKS repository during application deployment.
+
+🔗 Helm Repository:  
+`https://github.com/Sreevas-MK/employees-data-app-eks-helm.git`
+
+### 3. Application Source Code Repository
+* Contains the Flask application source code.
+* Includes Dockerfile for building the container image.
+* Images are built and pushed to Docker Hub via CI/CD.
+
+🔗 Application Repository:  
+`https://github.com/Sreevas-MK/flask-redis-mysql-cloud-stack.git`
+
+---
 
 ## Deployment Guide
 
