@@ -1,4 +1,4 @@
-# Enterprise EKS Platform
+# EKS Full-Stack Project
 
 This repository contains a full-stack Infrastructure-as-Code (IaC) deployment for an Amazon EKS environment featuring an automated PLG Stack (Prometheus, Loki, Grafana) for observability, RDS MySQL for persistent data, and ElastiCache (Valkey) for caching - all orchestrated via ArgoCD GitOps.
 
@@ -1383,4 +1383,7 @@ This ensures deterministic, failure-free Terraform destroys, even when cloud-man
 
 </details>
 
+---
+This project demonstrates a full-stack EKS deployment managed entirely via Terraform and GitOps (ArgoCD). It incorporates observability, persistent storage, and caching while handling complex cloud dependencies automatically.
+Overall, it provides a practical template for scalable, maintainable Kubernetes environments and serves as a reference for managing real-world EKS projects.
 ---
