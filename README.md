@@ -1,3 +1,4 @@
+<div style="max-width: 100%;">
 # Enterprise EKS Platform
 
 This repository contains a full-stack Infrastructure-as-Code (IaC) deployment for an Amazon EKS environment featuring an automated PLG Stack (Prometheus, Loki, Grafana) for observability, RDS MySQL for persistent data, and ElastiCache (Valkey) for caching - all orchestrated via ArgoCD GitOps.
@@ -1384,4 +1385,4 @@ This ensures deterministic, failure-free Terraform destroys, even when cloud-man
 </details>
 
 ---
-
+</div>
