@@ -1425,22 +1425,23 @@ This ensures deterministic, failure-free Terraform destroys, even when cloud-man
 <details>
 <summary><b>Monitoring Stack Limitations & Improvement Areas</b></summary>
 
-**Prometheus (Metrics Storage)**
+
+**Prometheus (Metrics Storage)**: 
 Prometheus currently runs **without persistent storage**, meaning all collected metrics are **lost on pod restart or node failure**. Long-term historical metrics retention is **not supported**.
 
-**Loki (Log Storage & Durability)**
+**Loki (Log Storage & Durability)**: 
 Loki stores logs in **S3**, but **local index and cache are not persisted** because Persistent Volumes are disabled. This means index data is rebuilt on restart, which can **impact query performance**. Loki also runs as a **single replica**, so high availability is **not implemented**.
 
-**Alertmanager (Alert State)**
+**Alertmanager (Alert State)**: 
 Alertmanager runs **without persistence**, so **alert history, silences, and notification state are lost** if the pod restarts.
 
-**Grafana (Dashboards & Configuration)**
+**Grafana (Dashboards & Configuration)**: 
 Grafana does **not use persistent storage**, meaning dashboards, saved queries, and UI configuration **may be lost** if the pod is recreated.
 
-**Promtail (Log Forwarding Reliability)**
+**Promtail (Log Forwarding Reliability)**: 
 Promtail does not persist log read positions, so **short log gaps may occur** during pod restarts.
 
-**Overall Limitation**
+**Overall Limitation**: 
 The monitoring stack currently supports **real-time observability**, but **durable long-term storage, historical retention, and full state persistence are not fully implemented**.
 
 </details>
