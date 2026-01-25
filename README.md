@@ -581,8 +581,10 @@ This file provisions the managed MySQL database.
 * **Networking & Safety**
   * `db_subnet_group_name`: Places the DB into the dedicated isolated database subnets created in Phase 2.
   * `publicly_accessible = false`: **Security Requirement.** Ensures the database has no public IP and cannot be reached from the internet.
-  * `skip_final_snapshot = true`: Disables the final backup during `terraform destroy` to speed up the teardown process (use only for Dev).
+  * `skip_final_snapshot = true`: Disables the final backup during `terraform destroy` to speed up the teardown process (use only for Dev). Use 'false', if you do not wish to skip.
   * `deletion_protection = false`: Allows Terraform to delete the DB during cleanup without manual intervention.
+  * `backup_retention_period = 7`: Keep 7 days.
+  * `backup_window = "03:00-04:00"`: Creates backups at UTC time.
 
 </details>
 
@@ -1417,6 +1419,29 @@ During `terraform destroy`, the deletion of the EKS cluster, Node Groups, and VP
 
 **Impact:**
 This ensures deterministic, failure-free Terraform destroys, even when cloud-managed resources are asynchronously cleaned up by Kubernetes controllers.
+
+</details>
+
+<details>
+<summary><b>Monitoring Stack Limitations & Improvement Areas</b></summary>
+
+**Prometheus (Metrics Storage)**
+Prometheus currently runs **without persistent storage**, meaning all collected metrics are **lost on pod restart or node failure**. Long-term historical metrics retention is **not supported**.
+
+**Loki (Log Storage & Durability)**
+Loki stores logs in **S3**, but **local index and cache are not persisted** because Persistent Volumes are disabled. This means index data is rebuilt on restart, which can **impact query performance**. Loki also runs as a **single replica**, so high availability is **not implemented**.
+
+**Alertmanager (Alert State)**
+Alertmanager runs **without persistence**, so **alert history, silences, and notification state are lost** if the pod restarts.
+
+**Grafana (Dashboards & Configuration)**
+Grafana does **not use persistent storage**, meaning dashboards, saved queries, and UI configuration **may be lost** if the pod is recreated.
+
+**Promtail (Log Forwarding Reliability)**
+Promtail does not persist log read positions, so **short log gaps may occur** during pod restarts.
+
+**Overall Limitation**
+The monitoring stack currently supports **real-time observability**, but **durable long-term storage, historical retention, and full state persistence are not fully implemented**.
 
 </details>
 

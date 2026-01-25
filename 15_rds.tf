@@ -8,7 +8,7 @@ module "db" {
   engine_version    = "8.0"
   instance_class    = "db.t4g.micro"
   allocated_storage = 20
-  storage_type      = "gp2"
+  storage_type      = "gp3"
 
   db_name  = "company"
   username = "appadmin"
@@ -21,9 +21,16 @@ module "db" {
   publicly_accessible    = false
   multi_az               = false
 
-  max_allocated_storage   = 0
-  backup_retention_period = 0
-  skip_final_snapshot     = true
+# max_allocated_storage   = 0
+  backup_retention_period = 7
+  backup_window           = "03:00-04:00"  
+
+# Time in UTC
+
+  skip_final_snapshot     = true           
+# Use false if you need final snapshot
+  final_snapshot_identifier = "${var.project_name}-mysql-final-snapshot"
+
   deletion_protection     = false
 
   create_db_parameter_group = true
@@ -33,5 +40,6 @@ module "db" {
 
   tags = {
     Environment = var.project_environment
+    Backup      = "enabled"
   }
 }
