@@ -81,7 +81,7 @@ variable "app_host" {
 variable "certificate_arn" {
   description = "certificate arn at ACM"
   type        = string
-  default     = "arn:aws:acm:ap-south-1:3xxxxxxxx10:certificate/e2f7cebe-713c-49cc-9cf4-79683a52256e"
+  default     = "arn:aws:acm:ap-south-1:${{ secrets.AWS_ACCOUNT_ID }}:certificate/e2f7cebe-713c-49cc-9cf4-79683a52256e"
 }
 
 variable "alb_group_name" {

@@ -5,7 +5,7 @@ This repository contains a full-stack Infrastructure-as-Code (IaC) deployment fo
 ---
 
 <p align="center">
-  <img src="./images/EKS-architecture-updated.png" alt="EKS project Architecture" width="1000">
+  <img src="./images/EKS-Architecture-Updated-1.png" alt="EKS project Architecture" width="1000">
 </p>
 
 
