@@ -1,11 +1,10 @@
-# This fetches your account ID automatically so you don't have to hardcode it
+
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_policy" "github_actions_policy" {
   name        = "GitHubActionsWorkflowPolicy"
   description = "Policy for GitHub Actions to manage EKS infrastructure"
 
-  # Use 'policy = jsonencode({...})' - it's cleaner and handles syntax better
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -44,7 +43,7 @@ resource "aws_iam_policy" "github_actions_policy" {
           "acm:*",
           "route53:*",
           "logs:*",
-          "iam:*" # Simplified for brevity, but your specific list was also fine
+          "iam:*" 
         ]
         Resource = "*"
       },
