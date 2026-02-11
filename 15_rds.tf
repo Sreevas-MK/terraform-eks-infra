@@ -21,17 +21,17 @@ module "db" {
   publicly_accessible    = false
   multi_az               = false
 
-# max_allocated_storage   = 0
+  # max_allocated_storage   = 0
   backup_retention_period = 7
-  backup_window           = "03:00-04:00"  
+  backup_window           = "03:00-04:00"
 
-# Time in UTC
+  # Time in UTC
 
-  skip_final_snapshot     = true           
-# Use false if you need final snapshot
+  skip_final_snapshot = true
+  # Use false if you need final snapshot
   final_snapshot_identifier = "${var.project_name}-mysql-final-snapshot"
 
-  deletion_protection     = false
+  deletion_protection = false
 
   create_db_parameter_group = true
   family                    = "mysql8.0"

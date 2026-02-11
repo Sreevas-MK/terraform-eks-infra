@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 resource "kubernetes_ingress_v1" "grafana_ingress" {
   depends_on = [
     kubernetes_namespace_v1.monitoring,
@@ -18,7 +20,7 @@ resource "kubernetes_ingress_v1" "grafana_ingress" {
       "alb.ingress.kubernetes.io/scheme" = "internet-facing"
       # MUST match your Flask and ArgoCD group name
       "alb.ingress.kubernetes.io/group.name"       = var.alb_group_name
-      "alb.ingress.kubernetes.io/certificate-arn"  = var.certificate_arn
+      "alb.ingress.kubernetes.io/certificate-arn"  = "arn:aws:acm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:certificate/${var.certificate_id}"
       "alb.ingress.kubernetes.io/listen-ports"     = "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
       "alb.ingress.kubernetes.io/ssl-redirect"     = "443"
       "alb.ingress.kubernetes.io/target-type"      = "ip"

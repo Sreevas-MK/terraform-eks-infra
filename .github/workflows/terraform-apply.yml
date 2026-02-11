@@ -21,11 +21,18 @@ jobs:
     steps:
       - name: "Checkout Code"
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # This ensures Gitleaks scans your history, not just the last line
+
+      - name: "Run GitLeaks scan"
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Configure AWS Credentials via OIDC"
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/GitHubActionsEKSRole
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/GitHubActionsWorkflowRole
           aws-region: ap-south-1
 
       - name: "Setup Terraform"

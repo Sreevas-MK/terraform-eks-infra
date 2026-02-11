@@ -20,6 +20,8 @@ resource "kubernetes_namespace_v1" "app_ns" {
 }
 
 
+data "aws_caller_identity" "current" {}
+
 resource "kubectl_manifest" "employees_app" {
   yaml_body = <<YAML
 apiVersion: argoproj.io/v1alpha1
@@ -42,7 +44,7 @@ spec:
         - name: "global.namespace"
           value: "${var.app_namespace}"
         - name: "global.certificate_arn"
-          value: "${var.certificate_arn}"
+          value: "arn:aws:acm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:certificate/${var.certificate_id}"
         - name: "global.vpc_cidr"
           value: "${module.vpc.vpc_cidr_block}"
         - name: "flask.name"

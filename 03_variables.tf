@@ -25,7 +25,7 @@ variable "vpc_cidr_block" {
 variable "route53_hosted_zone_arn" {
   description = "route53_hosted_zone_arns"
   type        = string
-  default     = "arn:aws:route53:::hostedzone/Z040348811KTWIYFFYOIF"
+  default     = "arn:aws:route53:::hostedzone/Z05823322O3AF5KJRMOWS"
 }
 
 
@@ -51,7 +51,7 @@ variable "eks_node_disk_size" {
 variable "app_repo_url" {
   description = "Application repo url"
   type        = string
-  default     = "https://github.com/Sreevas-MK/employees-data-app-rds-eca-eks.git"
+  default     = "https://github.com/Sreevas-MK/employees-data-app-eks-helm.git"
 }
 
 variable "app_repo_path" {
@@ -75,13 +75,13 @@ variable "app_name" {
 variable "app_host" {
   description = "Application hostname"
   type        = string
-  default     = "app.sreevasmk.in"
+  default     = "app.sreevasmk.online"
 }
 
-variable "certificate_arn" {
-  description = "certificate arn at ACM"
+variable "certificate_id" {
+  description = "The UUID of the certificate"
   type        = string
-  default     = "arn:aws:acm:ap-south-1:${{ secrets.AWS_ACCOUNT_ID }}:certificate/e2f7cebe-713c-49cc-9cf4-79683a52256e"
+  default     = "ab9db918-577d-464b-a7d6-84ba01adf006"
 }
 
 variable "alb_group_name" {
@@ -93,15 +93,24 @@ variable "alb_group_name" {
 variable "grafana_url" {
   description = "The external URL for ArgoCD"
   type        = string
-  default     = "grafana.sreevasmk.in"
+  default     = "grafana.sreevasmk.online"
 }
 
 variable "argocd_url" {
   description = "The external URL for ArgoCD"
   type        = string
-  default     = "argocd.sreevasmk.in"
+  default     = "argocd.sreevasmk.online"
 }
 
 variable "my_ip_cidr" {
-  default = "200.xx.xx.xx/32"
+  default = "200.69.21.162/32"
+}
+
+
+variable "github_username" {
+  default = "Sreevas-MK"
+}
+
+variable "github_repo" {
+  default = "terraform-eks-infra"
 }
