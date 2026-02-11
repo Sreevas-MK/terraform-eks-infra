@@ -29,6 +29,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Debug ref
+        run: echo "REF=${{ github.ref }}"
+
       - name: "Configure AWS Credentials via OIDC"
         uses: aws-actions/configure-aws-credentials@v3
         with:
