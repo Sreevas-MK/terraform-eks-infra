@@ -22,3 +22,11 @@ variable "s3_bucket_name" {
   default     = "eks-project-terraform-state-0001"
 }
 
+variable "github_username" {
+  default = "Sreevas-MK"
+}
+
+variable "github_repo" {
+  default = "terraform-eks-infra"
+}
+
