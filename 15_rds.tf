@@ -29,7 +29,7 @@ module "db" {
 
   skip_final_snapshot = true
   # Use false if you need final snapshot
-  final_snapshot_identifier = "${var.project_name}-mysql-final-snapshot"
+  final_snapshot_identifier_prefix = var.project_name
 
   deletion_protection = false
 
