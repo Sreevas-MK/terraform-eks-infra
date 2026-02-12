@@ -44,7 +44,9 @@ resource "aws_iam_policy" "github_actions_policy" {
           "route53:*",
           "logs:*",
           "iam:*",
-          "ssm:*"
+          "ssm:*",
+          "kms:*",
+          "elasticache:*"
         ]
         Resource = "*"
       },
