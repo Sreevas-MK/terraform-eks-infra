@@ -29,17 +29,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug ref
-        run: echo "REF=${{ github.ref }}"
-
-      - name: Show OIDC token claims
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const id_token = await core.getIDToken('sts.amazonaws.com');
-            const payload = JSON.parse(Buffer.from(id_token.split('.')[1], 'base64').toString());
-            console.log(payload);
-
       - name: "Configure AWS Credentials via OIDC"
         uses: aws-actions/configure-aws-credentials@v3
         with:

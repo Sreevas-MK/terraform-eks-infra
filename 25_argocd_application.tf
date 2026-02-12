@@ -20,8 +20,6 @@ resource "kubernetes_namespace_v1" "app_ns" {
 }
 
 
-data "aws_caller_identity" "current" {}
-
 resource "kubectl_manifest" "employees_app" {
   yaml_body = <<YAML
 apiVersion: argoproj.io/v1alpha1

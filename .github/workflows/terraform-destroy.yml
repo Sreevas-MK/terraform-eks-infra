@@ -15,7 +15,7 @@ jobs:
   terraform-destroy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: "ap-south-1"
+      AWS_REGION: "${{ vars.AWS_REGION }}"
 
     steps:
       - name: "Validate Destroy Confirmation"
@@ -34,8 +34,9 @@ jobs:
       - name: "Configure AWS via OIDC"
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::381492299804:role/GitHubActionsWorkflowRole
-          aws-region: ap-south-1
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/GitHubActionsWorkflowRole
+          role-session-name: github-actions-session
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: "Terraform Init & Destroy"
         run: |

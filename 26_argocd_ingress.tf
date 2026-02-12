@@ -1,5 +1,3 @@
-data "aws_caller_identity" "current" {}
-
 resource "kubernetes_ingress_v1" "argocd_shared_ingress" {
   depends_on = [
     kubernetes_namespace_v1.argocd,
