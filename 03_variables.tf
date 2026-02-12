@@ -81,7 +81,7 @@ variable "app_host" {
 variable "certificate_id" {
   description = "The UUID of the certificate"
   type        = string
-  default     = "ab9db918-577d-464b-a7d6-84ba01adf006"
+  default     = "77e2c37c-1194-449a-a349-79d6db76bb68"
 }
 
 variable "alb_group_name" {
