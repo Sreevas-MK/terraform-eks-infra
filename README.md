@@ -1,11 +1,11 @@
-# Terraform EKS infra
+# EKS Full-Stack Project
 
 This repository contains a full-stack Infrastructure-as-Code (IaC) deployment for an Amazon EKS environment featuring an automated PLG Stack (Prometheus, Loki, Grafana) for observability, RDS MySQL for persistent data, and ElastiCache (Valkey) for caching - all orchestrated via ArgoCD GitOps.
 
 ---
 
 <p align="center">
-  <img src="./images/EKS-Architecture-Updated-1.png" alt="EKS project Architecture" width="1000">
+  <img src="./images/EKS-architecture-updated.png" alt="EKS project Architecture" width="1000">
 </p>
 
 
@@ -52,7 +52,7 @@ This project is split into multiple repositories. Each repository has a clear re
 * Images are built and pushed to Docker Hub via CI/CD.
 
 🔗 Application Repository:  
-`https://github.com/Sreevas-MK/employees-data-app.git`
+`https://github.com/Sreevas-MK/flask-redis-mysql-cloud-stack.git`
 
 ---
 
@@ -581,10 +581,8 @@ This file provisions the managed MySQL database.
 * **Networking & Safety**
   * `db_subnet_group_name`: Places the DB into the dedicated isolated database subnets created in Phase 2.
   * `publicly_accessible = false`: **Security Requirement.** Ensures the database has no public IP and cannot be reached from the internet.
-  * `skip_final_snapshot = true`: Disables the final backup during `terraform destroy` to speed up the teardown process (use only for Dev). Use 'false', if you do not wish to skip.
+  * `skip_final_snapshot = true`: Disables the final backup during `terraform destroy` to speed up the teardown process (use only for Dev).
   * `deletion_protection = false`: Allows Terraform to delete the DB during cleanup without manual intervention.
-  * `backup_retention_period = 7`: Keep 7 days.
-  * `backup_window = "03:00-04:00"`: Creates backups at UTC time.
 
 </details>
 
@@ -1422,33 +1420,7 @@ This ensures deterministic, failure-free Terraform destroys, even when cloud-man
 
 </details>
 
-<details>
-<summary><b>Monitoring Stack Limitations & Improvement Areas</b></summary>
-
-
-**Prometheus (Metrics Storage)**: 
-Prometheus currently runs **without persistent storage**, meaning all collected metrics are **lost on pod restart or node failure**. Long-term historical metrics retention is **not supported**.
-
-**Loki (Log Storage & Durability)**: 
-Loki stores logs in **S3**, but **local index and cache are not persisted** because Persistent Volumes are disabled. This means index data is rebuilt on restart, which can **impact query performance**. Loki also runs as a **single replica**, so high availability is **not implemented**.
-
-**Alertmanager (Alert State)**: 
-Alertmanager runs **without persistence**, so **alert history, silences, and notification state are lost** if the pod restarts.
-
-**Grafana (Dashboards & Configuration)**: 
-Grafana does **not use persistent storage**, meaning dashboards, saved queries, and UI configuration **may be lost** if the pod is recreated.
-
-**Promtail (Log Forwarding Reliability)**: 
-Promtail does not persist log read positions, so **short log gaps may occur** during pod restarts.
-
-**Overall Limitation**: 
-The monitoring stack currently supports **real-time observability**, but **durable long-term storage, historical retention, and full state persistence are not fully implemented**.
-
-</details>
-
 ---
-This project demonstrates a full-stack EKS deployment managed entirely via Terraform and GitOps (ArgoCD). It incorporates observability, persistent storage, and caching while handling complex cloud dependencies automatically. 
-
+This project demonstrates a full-stack EKS deployment managed entirely via Terraform and GitOps (ArgoCD). It incorporates observability, persistent storage, and caching while handling complex cloud dependencies automatically.
 Overall, it provides a practical template for scalable, maintainable Kubernetes environments and serves as a reference for managing real-world EKS projects.
-
 ---

@@ -41,5 +41,5 @@ jobs:
       - name: "Terraform Init & Destroy"
         run: |
           terraform init
-          terraform destroy -auto-approve
+          terraform destroy -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" -auto-approve
 

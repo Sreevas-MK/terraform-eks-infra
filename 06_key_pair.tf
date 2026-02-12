@@ -1,11 +1,9 @@
-resource "aws_key_pair" "ssh_auth_key" {
-  key_name   = "${var.project_name}-ssh-key"
-  public_key = file("./files/eks-key.pub")
+variable "ssh_public_key" {
+  type = string
+}
 
-  tags = {
-    "Name"        = "${var.project_name}-ssh-key"
-    "Project"     = var.project_name
-    "Environment" = var.project_environment
-  }
+resource "aws_key_pair" "ssh_auth_key" {
+  key_name   = "eks-key"
+  public_key = var.ssh_public_key
 }
 
