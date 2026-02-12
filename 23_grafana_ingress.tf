@@ -28,7 +28,7 @@ resource "kubernetes_ingress_v1" "grafana_ingress" {
 
   spec {
     rule {
-      host = "grafana.sreevasmk.in"
+      host = var.grafana_url
       http {
         path {
           path      = "/"
