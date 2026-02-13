@@ -2,6 +2,7 @@
 
 This repository contains a full-stack Infrastructure-as-Code (IaC) deployment for an Amazon EKS environment featuring an automated PLG Stack (Prometheus, Loki, Grafana) for observability, RDS MySQL for persistent data, and ElastiCache (Valkey) for caching - all orchestrated via ArgoCD GitOps.
 
+
 ---
 
 <p align="center">
