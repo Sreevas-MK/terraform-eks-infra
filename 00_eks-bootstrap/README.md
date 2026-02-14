@@ -2,19 +2,102 @@
 
 This directory contains the "Foundation Code." Its sole purpose is to provision the infrastructure required to store the Terraform State safely in the cloud rather than on a local machine.
 
+In addition to Terraform backend resources, this phase also establishes the secure identity foundation required for GitHub Actions automation using OpenID Connect (OIDC).
+
+---
+
 ##  Bootstrap Architecture
 
 <p align="center">
   <img src="./images/00_eks_bootstrap.png" alt="Bootstrap Architecture" width="350">
 </p>
 
+---
+
 ##  Explanations
 
-Terraform needs a place to store its state file (`terraform.tfstate`). If we store it in the same cluster we are building, we can't manage it if the cluster breaks. 
+Terraform needs a place to store its state file (`terraform.tfstate`). If we store it in the same cluster we are building, we can't manage it if the cluster breaks.
 
-This sub-module solves that by creating two independent AWS resources:
-1. **Amazon S3 Bucket**: Acts as the remote storage for the state file.
-2. **Amazon DynamoDB**: Acts as a "Locking Mechanism." When one person is running `terraform apply`, DynamoDB locks the state so no one else can make changes simultaneously, preventing state corruption.
+This sub-module solves that by creating independent foundational resources:
+
+1. **Amazon S3 Bucket**  
+   Acts as the remote storage for the state file.
+
+2. **Amazon DynamoDB**  
+   Acts as a "Locking Mechanism." When one person is running `terraform apply`, DynamoDB locks the state so no one else can make changes simultaneously, preventing state corruption.
+
+3. **GitHub Actions OIDC Identity**  
+   Enables secure CI/CD authentication from GitHub Actions to AWS using short-lived credentials instead of static access keys.
+
+4. **GitHub Actions IAM Role & Policy**  
+   Allows GitHub workflows to provision and manage AWS infrastructure securely.
+
+---
+
+##  CI/CD Identity Bootstrap (GitHub Actions OIDC)
+
+This bootstrap phase provisions secure authentication between GitHub Actions and AWS using OpenID Connect federation.
+
+Instead of storing long-lived AWS access keys inside repositories, workflows receive temporary credentials during execution.
+
+### Authentication Flow
+
+1. GitHub workflow starts
+2. GitHub generates an OIDC identity token
+3. AWS validates the token using the configured OIDC provider
+4. Workflow assumes `GitHubActionsWorkflowRole`
+5. Terraform executes using temporary AWS credentials
+
+This provides:
+
+- Passwordless authentication
+- Short-lived session tokens
+- Repository-restricted trust boundaries
+
+---
+
+### Security Design
+
+Access is restricted using IAM trust policies:
+
+- Token audience must be `sts.amazonaws.com`
+- Only workflows from the configured repository are trusted
+- Temporary credentials issued per workflow run
+- No static AWS credentials stored in GitHub
+
+Example trust scope:
+
+```
+
+repo:<github-username>/<repository-name>:*
+
+````
+
+---
+
+### Services Managed by Automation Role
+
+The GitHub Actions role is permitted to manage infrastructure including:
+
+- EKS
+- EC2
+- Auto Scaling
+- Elastic Load Balancing
+- RDS
+- ElastiCache
+- IAM
+- KMS
+- Route53
+- S3
+- Secrets Manager
+- CloudWatch Logs
+- CloudFormation
+- SSM
+
+It also has access to:
+
+- Terraform state bucket
+- DynamoDB locking table
 
 ---
 
@@ -26,6 +109,9 @@ This sub-module solves that by creating two independent AWS resources:
 | `dynamodb.tf` | Defines the locking table | Uses `LockID` as the primary key for Terraform compatibility |
 | `variables.tf` | Project configuration | Sets the Region, Project Name, and Environment tags |
 | `provider.tf` | AWS Connection | Configures the `aws` provider based on your region variable |
+| `github_oidc.tf` | GitHub OIDC provider | Establishes secure trust between AWS and GitHub |
+| `github_iam_role.tf` | GitHub Actions IAM Role | Allows workflows to assume AWS permissions |
+| `github_iam_policy.tf` | Automation IAM Policy | Grants infrastructure provisioning access |
 
 ---
 
@@ -33,29 +119,40 @@ This sub-module solves that by creating two independent AWS resources:
 
 ### 1. Initialization
 Navigate to this directory and initialize the local Terraform backend:
+
 ```bash
 cd 00_eks-bootstrap
 terraform init
+````
 
-```
+---
 
 ### 2. Deployment
 
-Provision the S3 bucket and DynamoDB table:
+Provision the S3 bucket, DynamoDB table, and GitHub OIDC/IAM resources:
 
 ```bash
 terraform apply
-
 ```
 
 *Review the plan and type `yes` when prompted.*
 
+---
+
 ### 3. Verification
 
-Once complete, verify that the following resources exist in the AWS Console:
+Once complete, verify the following resources exist in AWS Console:
 
-* **S3:** `eks-project-terraform-state-0001`
-* **DynamoDB:** `eks-project-terraform-locks-0001`
+**Terraform Backend**
+
+* S3 Bucket: `eks-project-terraform-state-0001`
+* DynamoDB Table: `eks-project-terraform-locks-0001`
+
+**CI/CD Identity**
+
+* IAM Role: `GitHubActionsWorkflowRole`
+* IAM Policy: `GitHubActionsWorkflowPolicy`
+* IAM Identity Provider: `token.actions.githubusercontent.com`
 
 ---
 
@@ -72,8 +169,15 @@ terraform {
     dynamodb_table = "eks-project-terraform-locks-0001"
   }
 }
+```
+
+GitHub Actions workflows will assume:
 
 ```
+GitHubActionsWorkflowRole
+```
+
+to run Terraform automation.
 
 ---
 
@@ -94,17 +198,28 @@ resource "aws_s3_bucket" "terraform_state" {
   bucket        = var.s3_bucket_name
   force_destroy = true  # Enables deletion of non-empty buckets
 }
-
 ```
 
 #### Deletion Steps
 
 1. **FIRST:** Destroy the Main Infrastructure (EKS/VPC) in the root directory.
+
 2. **SECOND:** Run the destroy command in this directory:
 
 ```bash
-terraform destroy -auto-approve
-
+terraform destroy 
 ```
 
 > ** Note:** Running `terraform destroy` in this folder while the EKS cluster is still active will result in "Orphaned Infrastructure." You will lose the ability to manage or delete the EKS cluster via Terraform.
+
+Destroying this bootstrap module will:
+
+- Break Terraform remote state management
+
+- Disable GitHub Actions automation
+
+- Prevent CI/CD workflows from assuming AWS roles
+
+Only destroy bootstrap resources if the entire platform is being permanently decommissioned.
+
+---

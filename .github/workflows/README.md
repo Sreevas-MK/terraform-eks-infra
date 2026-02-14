@@ -1,72 +1,267 @@
-#  GitHub Actions Workflow
+#  GitHub Actions Workflows
 
-This project uses GitHub Actions to automate the lifecycle of the EKS Infrastructure.
+This project uses GitHub Actions to automate Terraform validation, planning, deployment, and controlled destruction of the EKS infrastructure.
 
-##  1. EKS Infrastructure Pipeline (`terraform-apply.yml`)
-
-**Trigger:** Automatic on `push` or `pull_request` to the `main` branch.
-
-###  Purpose
-
-This is the primary Continuous Deployment (CD) pipeline. Every time you change your Terraform code and push it to GitHub, this workflow ensures the cloud environment matches your code.
-
-###  Workflow Steps:
-
-1. **Checkout Code:** Pulls the repository onto the GitHub runner.
-2. **Setup Terraform:** Installs the specific version (`v3.1.2`) of the Terraform CLI.
-3. **Generate SSH Key:** Injects your `SSH_PUBLIC_KEY` secret into `./files/eks-key.pub`. This ensures the Bastion host and EKS nodes can be accessed via the key you own.
-4. **Init & Apply:** * Initializes the backend (S3).
-* Automatically executes changes to the VPC, EKS, RDS, and Helm charts.
+All workflows authenticate securely to AWS using **OIDC federation** and temporary credentials.  
+No long-lived AWS access keys are stored in GitHub.
 
 ---
 
-##  2. EKS Infrastructure Destroy (`terraform-destroy.yml`)
+##  Authentication Model (OIDC)
 
-**Trigger:** **Manual Only** via the "Run workflow" button in the Actions tab.
+Workflows authenticate using:
+
+- AWS IAM Role: `GitHubActionsWorkflowRole`
+- OIDC Provider: `token.actions.githubusercontent.com`
+- Temporary STS credentials issued per workflow run
+
+### Authentication Flow
+
+1. Workflow starts on GitHub runner
+2. GitHub generates an OIDC token
+3. AWS validates identity via IAM Identity Provider
+4. Workflow assumes `GitHubActionsWorkflowRole`
+5. Terraform runs using temporary credentials
+
+Benefits:
+
+- No AWS access keys
+- Short-lived credentials
+- Repository-scoped trust policy
+- Improved security posture
+
+---
+
+##  1. Terraform Plan (`terraform-plan.yml`)
+
+###  Trigger
+
+Runs automatically on:
+
+- Push to `main`
+- Pull requests targeting `main`
+
+Ignored Paths:
+
+- Markdown files
+- Images
+- `00_eks-bootstrap` directory
+
+---
 
 ###  Purpose
 
-This workflow is a safety-first mechanism to tear down the entire infrastructure to save costs or reset the environment.
+This is the **Continuous Integration (CI)** workflow.
+
+It performs validation and preview of infrastructure changes before deployment.
+
+---
+
+###  Workflow Steps
+
+1. **Checkout Code**
+2. **Run Gitleaks Scan**
+   - Detects exposed secrets or credentials
+3. **Configure AWS via OIDC**
+4. **Setup Terraform CLI**
+5. **Generate SSH Key**
+   - Injects `SSH_PUBLIC_KEY` into runtime environment
+6. **Terraform Init**
+7. **Terraform Validate**
+8. **Terraform Plan**
+   - Shows infrastructure changes without applying
+
+---
+
+##  2. Terraform Apply (`terraform-apply.yml`)
+
+###  Trigger
+
+Manual only via:
+
+Actions → Run Workflow
+
+---
+
+###  Purpose
+
+This is the controlled deployment workflow used to apply infrastructure changes after review.
+
+It prevents accidental deployments from every push.
+
+---
+
+###  Workflow Steps
+
+1. **Checkout Repository**
+2. **Configure AWS Credentials via OIDC**
+3. **Setup Terraform**
+4. **Generate SSH Key File**
+5. **Terraform Init**
+6. **Terraform Apply**
+   - Executes infrastructure changes automatically
+
+---
+
+##  3. EKS Infrastructure Destroy (`terraform-destroy.yml`)
+
+###  Trigger
+
+Manual only with confirmation input.
+
+---
+
+###  Purpose
+
+Safely destroys all infrastructure when required.
+
+Used for:
+
+- Cost cleanup
+- Full environment reset
+- Project teardown
+
+---
 
 ###  Safety Mechanism
 
-The workflow will **fail immediately** unless you explicitly type `DESTROY` into the input prompt. This prevents accidental deletions.
+Workflow will fail unless:
 
-###  Workflow Steps:
+```
 
-1. **Validation:** Checks if the manual input matches "DESTROY".
-2. **Checkout & Setup:** Prepares the environment and SSH keys.
-3. **Terraform Init:** Connects to the existing state in S3.
-4. **Terraform Destroy:** Identifies all created resources and deletes them in the correct order (Helm charts first, then EKS, then VPC).
+DESTROY
+
+```
+
+is entered manually.
+
+---
+
+###  Workflow Steps
+
+1. Validate destroy confirmation
+2. Checkout repository
+3. Setup Terraform
+4. Configure AWS via OIDC
+5. Generate SSH Key
+6. Terraform Init
+7. Terraform Destroy
+
+Terraform deletes resources in dependency order:
+
+- Helm resources
+- Kubernetes resources
+- EKS cluster
+- Networking
+- Supporting AWS infrastructure
 
 ---
 
 ##  Required GitHub Secrets & Variables
 
-To make these workflows function, the following must be configured in **Settings > Secrets and variables > Actions**:
+Configure under:
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `AWS_ACCESS_KEY_ID` | Secret | IAM User key with AdministratorAccess |
-| `AWS_SECRET_ACCESS_KEY` | Secret | IAM User secret |
-| `SSH_PUBLIC_KEY` | Secret | The content of your `.pub` file for EC2 access |
-| `AWS_REGION` | Variable | Set to `ap-south-1` (defined in the YAML) |
+Settings → Secrets and Variables → Actions
 
 ---
 
-##  How to use the Manual Destroy
+###  Secrets
 
-1. Navigate to the **Actions** tab in your GitHub repository.
-2. Select **"EKS Infrastructure Destroy (MANUAL ONLY)"** from the sidebar.
-3. Click the **Run workflow** dropdown.
-4. Enter `DESTROY` in the text box.
-5. Click the green **Run workflow** button.
+| Name | Description |
+| --- | --- |
+| `SSH_PUBLIC_KEY` | Public SSH key used for Bastion and node access |
 
 ---
 
-##  Important Considerations
+###  Variables
 
-* **State Locking:** Both workflows use the DynamoDB table (from the bootstrap) to prevent two people from running the pipeline at once.
-* **Bootstrap Dependencies:** These workflows assume the **S3 Bucket** and **DynamoDB** table already exist. If they don't, you must run the bootstrap folder manually from your local server first.
+| Name | Description |
+| --- | --- |
+| `AWS_REGION` | AWS deployment region (example: `ap-south-1`) |
+| `AWS_ACCOUNT_ID` | AWS Account ID used in role assumption |
 
 ---
+
+##  Important Security Notes
+
+- No AWS access keys are used
+- All authentication uses OIDC federation
+- IAM trust policy restricts repository access
+- Credentials are temporary per workflow run
+- Gitleaks scanning prevents secret leaks
+
+---
+
+##  Operational Dependencies
+
+Before workflows can run successfully:
+
+1. Bootstrap module must be applied locally:
+
+```
+
+00_eks-bootstrap/
+
+```
+
+This creates:
+
+- Terraform state S3 bucket
+- DynamoDB lock table
+- GitHub OIDC provider
+- GitHub Actions IAM role
+
+---
+
+##  State Locking
+
+Terraform uses:
+
+- S3 backend for state storage
+- DynamoDB for state locking
+
+This prevents:
+
+- Concurrent applies
+- State corruption
+- Race conditions between workflows
+
+---
+
+##  Manual Destroy Procedure
+
+1. Open repository → Actions tab
+2. Select:
+
+```
+
+EKS Infrastructure Destroy (MANUAL ONLY)
+
+```
+
+3. Click Run Workflow
+4. Enter:
+
+```
+
+DESTROY
+
+```
+
+5. Confirm execution
+
+---
+
+##  Operational Warning
+
+Destroying infrastructure will:
+
+- Remove EKS cluster
+- Delete VPC and networking
+- Remove databases and caches
+- Destroy Kubernetes workloads
+
+Only execute destroy when full teardown is intended.
+
+---
+

@@ -6,7 +6,7 @@ This repository contains a full-stack Infrastructure-as-Code (IaC) deployment fo
 ---
 
 <p align="center">
-  <img src="./images/EKS-Architecture-Updated-1.png" alt="EKS project Architecture" width="1000">
+  <img src="./images/EKS-Architecture-Updated-2.png" alt="EKS project Architecture" width="1000">
 </p>
 
 
@@ -73,7 +73,15 @@ terraform init
 terraform apply
 ```
 
-3. This creates the S3 bucket and DynamoDB table used for state locking.
+3. This step provisions the foundational infrastructure required before deploying the main platform:
+
+- Amazon S3 bucket for Terraform remote state storage
+
+- DynamoDB table for Terraform state locking
+
+- GitHub OIDC IAM roles and policies
+
+- Trust relationships and assume-role configurations used by CI/CD workflows
 
 ### Step 2: Main Infrastructure Deployment
 
@@ -102,16 +110,17 @@ This project uses an automation model. While the foundation is laid manually, th
 
 ### 1. Manual Foundation (Bootstrap)
 The `00_eks-bootstrap` directory is **not** part of the automated pipeline.
-* **Logic:** It creates the S3 bucket that the CI/CD pipeline itself depends on. 
+* **Logic:** It creates the S3 bucket, GitHub OIDC IAM roles and policies that the CI/CD pipeline itself depends on. 
 * **Action:** You must run this once from your local server or workstation to "unlock" the cloud environment.
 
 ### 2. Automated Pipelines (GitHub Actions)
 Located in `.github/workflows/`, these handle the "Main" infrastructure automatically.
 
-| Workflow | Trigger | Purpose |
-| :--- | :--- | :--- |
-| **EKS Infrastructure Pipeline** | `push` to `main` | Automatically applies changes to VPC, EKS, RDS, and Apps. |
-| **EKS Infrastructure Destroy** | `Manual Only` | Provides a safe, prompt-protected way to delete the entire stack. |
+| Workflow                        | Trigger          | Purpose                                                                                                              |
+| :------------------------------ | :--------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **EKS Infrastructure Pipeline** | `push` to `main` | Runs Terraform `fmt`, `validate`, and `plan` automatically. Infrastructure changes are reviewed before manual apply. |
+| **EKS Infrastructure Apply**    | `Manual Trigger` | Executes Terraform `apply` after reviewing the generated plan.                                                       |
+| **EKS Infrastructure Destroy**  | `Manual Only`    | Provides a safe, confirmation-protected process to delete the full infrastructure stack.                             |
 
 > **Note on Secrets:** For GitHub Actions to function, you must add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `SSH_PUBLIC_KEY` to your GitHub Repository Secrets.
 
@@ -922,7 +931,7 @@ When running your manual destroy, you will see the `null_resource` status as **"
 
 ---
 
-## Project Demo & Validation Videos
+## Project Demo, Validation photos & videos
 
 This section contains a series of recorded demo photos/videos showcasing validation of the EKS platform.
 The section shows terraform execution via github-actions, cluster health checks, ingress and load balancer verification, application functionality with database operations, and data persistence across application restarts.
@@ -1059,7 +1068,7 @@ kubectl get ingress -A
 </details>
 
 <details>
-<summary><b>Ingress & Load Balancer Verification</b></summary>
+<summary><b>Ingress, Load Balancer, ArgoCD and Grafana dashboard verification</b></summary>
 
 **Purpose:**
 Validate ingress routing, DNS, and AWS Application Load Balancer configuration.
