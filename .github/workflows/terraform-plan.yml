@@ -1,22 +1,40 @@
-name: "Terraform Apply (Manual)"
+name: "Terraform Plan"
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/images/**'
+      - '00_eks-bootstrap/**'
+
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/images/**'
+      - '00_eks-bootstrap/**'
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  terraform-apply:
+  terraform-plan:
     runs-on: ubuntu-latest
-    environment: production
     env:
       AWS_REGION: "${{ vars.AWS_REGION }}"
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v3
@@ -36,6 +54,9 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan
 
