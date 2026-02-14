@@ -122,7 +122,8 @@ Located in `.github/workflows/`, these handle the "Main" infrastructure automati
 | **EKS Infrastructure Apply**    | `Manual Trigger` | Executes Terraform `apply` after reviewing the generated plan.                                                       |
 | **EKS Infrastructure Destroy**  | `Manual Only`    | Provides a safe, confirmation-protected process to delete the full infrastructure stack.                             |
 
-> **Note on Secrets:** For GitHub Actions to function, you must add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `SSH_PUBLIC_KEY` to your GitHub Repository Secrets.
+> **Note on Secrets:** GitHub Actions authenticates to AWS using OIDC IAM Roles created during the Bootstrap phase.
+No long-lived AWS Access Keys are stored in repository secrets.
 
 ---
 

@@ -75,7 +75,7 @@ variable "app_name" {
 variable "app_host" {
   description = "Application hostname"
   type        = string
-  default     = "app.sreevasmk.online"
+  default     = "app.sreevasmk.in"
 }
 
 variable "certificate_id" {
@@ -93,17 +93,18 @@ variable "alb_group_name" {
 variable "grafana_url" {
   description = "The external URL for ArgoCD"
   type        = string
-  default     = "grafana.sreevasmk.online"
+  default     = "grafana.sreevasmk.in"
 }
 
 variable "argocd_url" {
   description = "The external URL for ArgoCD"
   type        = string
-  default     = "argocd.sreevasmk.online"
+  default     = "argocd.sreevasmk.in"
 }
 
+# Public IP of the admin server allowed for SSH/API access
 variable "my_ip_cidr" {
-  default = "200.69.21.162/32"
+  default = "200.xx.xx.xx/32"  
 }
 
 
